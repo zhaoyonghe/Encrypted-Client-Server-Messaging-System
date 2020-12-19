@@ -1,17 +1,30 @@
+SERVER_SANDBOX = msg_server_sandbox
+SERVER_SANDBOX_CERTS = $(SERVER_SANDBOX)/certs
+SERVER_SANDBOX_PRIVATE = $(SERVER_SANDBOX)/private
+SERVER_SANDBOX_HASHED_PW = $(SERVER_SANDBOX)/hashed_pw
+
 default:
 	g++ -o client.out client.cpp -lssl -lcrypto
 	g++ -o server.out server.cpp -lssl -lcrypto
 
-install: getcert changepw sendmsg recvmsg server
-	rm -rf msg_server_sandbox
-	mkdir msg_server_sandbox
-	cp server.out msg_server_sandbox
+install: server getcert changepw sendmsg recvmsg
+	echo "not implemented"
 
 server:
-	echo "Not implemented"
+	rm -rf $(SERVER_SANDBOX)
+	mkdir -p $(SERVER_SANDBOX)
+	mkdir -p $(SERVER_SANDBOX)/certs
+	mkdir -p $(SERVER_SANDBOX)/private
+	mkdir -p $(SERVER_SANDBOX)/hashed_pw
+	g++ -o server.out server.cpp -lssl -lcrypto -lcrypt
+	cp server.out $(SERVER_SANDBOX)
+	cp certs/container/intermediate_ca/certs/msg_server.cert.pem $(SERVER_SANDBOX_CERTS)/msg_server.cert.pem
+	cp certs/container/intermediate_ca/certs/ca-chain.cert.pem $(SERVER_SANDBOX_CERTS)/ca-chain.cert.pem
+	cp certs/container/intermediate_ca/private/msg_server.key.pem $(SERVER_SANDBOX_PRIVATE)/msg_server.key.pem
+	cp hashed_pw/hashed_pw/* $(SERVER_SANDBOX_HASHED_PW)
 
 getcert:
-	g++ -o getcert.out getcert.cpp -lssl -lcrypto
+	g++ -o getcert.out getcert.cpp client.cpp -lssl -lcrypto
 
 changepw:
 	g++ -o changepw.out changepw.cpp -lssl -lcrypto
@@ -24,3 +37,4 @@ recvmsg:
 
 clean:
 	rm -rf *.out
+	rm -rf $(SERVER_SANDBOX)
