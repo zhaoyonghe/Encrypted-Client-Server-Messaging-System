@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstring>
 
+
 // Represent all possible actions.
 enum Action {
     getcert,
@@ -9,7 +10,6 @@ enum Action {
     sendmsg,
     recvmsg,
     unsupport,
-
 };
 
 // Represent info sent by the client to the server.

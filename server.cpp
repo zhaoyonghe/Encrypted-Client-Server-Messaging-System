@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 
+
 #include "info.hpp"
 #include "my.hpp"
 
@@ -72,9 +73,11 @@ bool verify_password(std::string username, std::string password) {
     return strcmp(stream.str().c_str(), crypt(password.c_str(), stream.str().c_str())) == 0;
 }
 
+
 void deal_with_getcert(Info& info) {
 
 }
+
 
 int main() {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -117,7 +120,6 @@ int main() {
 
             // Parse request here
             int action = get_action_from_request(request);
-
             std::string action_string;
             switch (action) {
             case getcert:
