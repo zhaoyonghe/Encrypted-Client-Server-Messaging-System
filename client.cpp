@@ -18,7 +18,7 @@
 int client_send(Info& info) {
     std::string address = "www.msg_server.com";
     char msg_header[50];
-    sprintf(msg_header, "GET /%d HTTP/1.1", info.action);
+    sprintf(msg_header, "POST /%d HTTP/1.1", info.action);
 
     /* Set up the SSL context */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -59,7 +59,7 @@ int client_send(Info& info) {
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
-    my::send_http_request(ssl_bio.get(), msg_header, "localhost:4399");
+    my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
     return 1;

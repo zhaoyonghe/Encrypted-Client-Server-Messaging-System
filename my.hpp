@@ -132,6 +132,17 @@ void send_http_request(BIO *bio, const std::string& line, const std::string& hos
     BIO_flush(bio);
 }
 
+void send_http_post(BIO *bio, const std::string& line, const std::string& host, const std::string& body) {
+    std::string post = line + "\r\n";
+    post += "Host: " + host + "\r\n";
+    post += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+    post += "\r\n";
+
+    BIO_write(bio, post.data(), post.size());
+    BIO_write(bio, body.data(), body.size());
+    BIO_flush(bio);    
+}
+
 void send_http_response(BIO *bio, const std::string& body)
 {
     std::string response = "HTTP/1.1 200 OK\r\n";

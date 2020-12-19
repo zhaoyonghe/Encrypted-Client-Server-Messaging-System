@@ -15,9 +15,41 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #include "info.hpp"
 #include "my.hpp"
+
+Action char_to_action(char c) {
+    if (!isdigit(c)) {
+        return unsupport;
+    }
+    return ((c - '0') >= unsupport) ? unsupport : (Action)(c - '0');
+}
+
+Action get_action_from_request(std::string& request, int index) {
+    if (index >= request.length()) {
+        return unsupport;
+    }
+    return char_to_action(request[index]);
+}
+
+Action get_action_from_request(std::string& request) {
+    std::string header_get = "GET /";
+    std::string header_post = "POST /";
+
+    std::size_t get_index = request.find(header_get);
+    if (get_index != std::string::npos) {
+        return get_action_from_request(request, get_index + header_get.length());
+    }
+
+    std::size_t post_index = request.find(header_post);
+    if (post_index != std::string::npos) {
+        return get_action_from_request(request, post_index + header_post.length());
+    }
+
+    return unsupport;
+}
 
 bool verify_password(std::string username, std::string password) {
     std::string hased_pw_path = "hashed_pw/" + username;
@@ -38,6 +70,10 @@ bool verify_password(std::string username, std::string password) {
     stream << t.rdbuf();
 
     return strcmp(stream.str().c_str(), crypt(password.c_str(), stream.str().c_str())) == 0;
+}
+
+void deal_with_getcert(Info& info) {
+
 }
 
 int main() {
@@ -72,8 +108,6 @@ int main() {
 
     printf("Server running\n");
 
-    std::string header_get = "GET /";
-    std::string header_post = "POST /";
     while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get())) {
         conn_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
         try {
@@ -82,30 +116,25 @@ int main() {
             printf("%s\n", request.c_str());
 
             // Parse request here
-            std::string action;
-            std::size_t get_index = request.find(header_get);
-            if (get_index != std::string::npos) {
-                action = request[get_index + header_get.length()];
-            } else {
-                std::size_t post_index = request.find(header_post);
-                if (post_index != std::string::npos) {
-                    action = request[post_index + header_post.length()];
-                } else {
-                    my::send_http_response(conn_bio.get(), "no valid action type found\n");
-                    continue;
-                }
-            }
+            int action = get_action_from_request(request);
 
-            // Display action type
-            int action_num = std::stoi(action, nullptr, 10);
             std::string action_string;
-            switch (action_num) {
+            switch (action) {
             case getcert:
                 action_string = "getcert";
-                std::cout << verify_password("addleness", "Cardin_pwns") << std::endl;
-                std::cout << verify_password("addleness ", "Cardin_pwns") << std::endl;
-                std::cout << verify_password("addleness", "Cardn_pwns") << std::endl;
-                std::cout << verify_password("overrich", "Cardin_pwns") << std::endl;
+                {
+                    Info info;
+                    char* end_of_headers = strstr(&request[0], "\r\n\r\n");
+                    std::string body = std::string(end_of_headers + 4, &request[request.size()]);
+                    printf("%s\n", body.c_str());
+                    printf("%d--\n", info.from_string(body));
+                    info.print_info();
+
+                    std::cout << verify_password("addleness", "Cardin_pwns") << std::endl;
+                    std::cout << verify_password("addleness ", "Cardin_pwns") << std::endl;
+                    std::cout << verify_password("addleness", "Cardn_pwns") << std::endl;
+                    std::cout << verify_password("overrich", "Cardin_pwns") << std::endl;
+                }
                 break;
             case changepw:
                 action_string = "changepw";
