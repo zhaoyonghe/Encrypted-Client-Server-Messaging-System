@@ -63,7 +63,16 @@ int client_send(Info &info)
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
-    my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+    if (info.action == getcert || info.action == changepw) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+    } else if (info.action == sendmsg) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.receipient);
+    } else if (info.action == recvmsg) {
+        // TODO
+    } else {
+        // TODO
+    }
+    
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
     return 1;

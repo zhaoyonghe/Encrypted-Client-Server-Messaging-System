@@ -15,7 +15,9 @@
 #include <vector>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <exception>      
 #include <streambuf>
+
 
 #include "info.hpp"
 #include "my.hpp"
@@ -192,8 +194,8 @@ int main()
     while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get()))
     {
         conn_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
-        try
-        {
+        try {
+            std::cout << "fucking0" << std::endl;
             std::string request = my::receive_http_message(conn_bio.get());
             printf("Got request:\n");
             printf("%s\n", request.c_str());
@@ -240,12 +242,11 @@ int main()
             }
 
             printf("Got action: %s\n", action_string.c_str());
-            my::send_http_response(conn_bio.get(), http_code, response);
-        }
-        catch (const std::exception &ex)
-        {
+            my::send_http_response(conn_bio.get(), response);
+        } catch (const std::exception& ex) {
             // TODO: crash on error?
-            printf("Worker exited with exception:\n%s\n", ex.what());
+            const char* a = ex.what();
+            printf("Worker exited with exception:\n%s\n", a);
         }
     }
     printf("\nClean exit!\n");
