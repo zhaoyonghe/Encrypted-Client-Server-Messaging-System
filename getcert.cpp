@@ -63,7 +63,17 @@ int main(int argc, char *argv[])
 
     info.csr = generate_key_and_csr();
     info.print_info();
-    client_send(info);
 
-    // TODO: Save received certificate
+    std::string code, body;
+    client_send(info, code, body);
+
+    // If get 200 OK, save received certificate
+    if (code == "200")
+    {
+        std::ofstream certificate_pem_file("./my_certificate.pem");
+        certificate_pem_file << body;
+        certificate_pem_file.close();
+    }
+
+    return 0;
 }

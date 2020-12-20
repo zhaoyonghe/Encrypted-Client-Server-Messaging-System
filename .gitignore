@@ -1,4 +1,5 @@
 *.out
 **/server_signed_certificate.pem
 my_private_key.pem
+my_certificate.pem
 msg_server_sandbox/certs/users/*.pem
