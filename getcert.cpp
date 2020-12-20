@@ -10,13 +10,13 @@
 std::string generate_key_and_csr(const std::string& username)
 {
     // Generate key and csr
-    X509_REQ *req = NULL;
-    EVP_PKEY *key = NULL;
+    X509_REQ* req = NULL;
+    EVP_PKEY* key = NULL;
     generate_key_csr(&key, &req);
 
     // Convert key and csr to pem
-    uint8_t *key_bytes = NULL;
-    uint8_t *csr_bytes = NULL;
+    uint8_t* key_bytes = NULL;
+    uint8_t* csr_bytes = NULL;
     size_t key_size = 0;
     size_t csr_size = 0;
     key_to_pem(key, &key_bytes, &key_size);
@@ -40,20 +40,14 @@ std::string generate_key_and_csr(const std::string& username)
     return csr_pem_string;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     Info info;
     info.action = getcert;
 
-    if (argc <= 1)
-    {
-        fprintf(stderr, "Please enter enough parameters!\n");
-        exit(1);
-    }
-
-    if (argc > 3)
-    {
-        fprintf(stderr, "Too many parameters!");
+    if (argc <= 1 or argc > 3) {
+        // argc must be 1 or 2
+        fprintf(stderr, "Usage: getcert <username> <password>?");
         exit(1);
     }
 

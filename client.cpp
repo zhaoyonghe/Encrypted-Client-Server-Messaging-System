@@ -67,7 +67,14 @@ int client_send(Info &info, std::string& code, std::string& body)
     if (info.action == getcert || info.action == changepw) {
         my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
     } else if (info.action == sendmsg) {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.receipient);
+        if (info.stage == get_recipient_cert) {
+            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.recipient);
+        } else if (info.stage == send_encrypted_signed_message) {
+            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.encrypted_signed_message);
+        } else {
+            // TODO
+        }
+        
     } else if (info.action == recvmsg) {
         // TODO
     } else {

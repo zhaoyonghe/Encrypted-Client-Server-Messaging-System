@@ -12,17 +12,23 @@ enum Action {
     unsupport,
 };
 
+enum Stage {
+    get_recipient_cert = 1,
+    send_encrypted_signed_message
+};
+
 // Represent info sent by the client to the server.
 class Info {
 public:
     const static int ENCODED_FIELD_NUM = 4;
     Action action;
+    Stage stage;
     std::string username;
     std::string password;
     std::string new_password;
     std::string csr;
     std::string cert_path;
-    std::string receipient;
+    std::string recipient;
     std::string encrypted_signed_message;
 
     Info() = default;
