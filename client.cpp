@@ -15,7 +15,7 @@
 #include "my.hpp"
 #include "client.hpp"
 
-int client_send(Info &info, std::string &code, std::string &body, std::string& private_key_path)
+int client_send(Info &info, std::string &code, std::string &body, std::string &private_key_path)
 {
     std::string address = "www.msg_server.com";
     char msg_header[50];
@@ -75,7 +75,18 @@ int client_send(Info &info, std::string &code, std::string &body, std::string& p
     }
     else if (info.action == sendmsg)
     {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.receipient);
+        if (info.stage == get_recipient_cert)
+        {
+            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.recipient);
+        }
+        else if (info.stage == send_encrypted_signed_message)
+        {
+            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.encrypted_signed_message);
+        }
+        else
+        {
+            // TODO
+        }
     }
     else if (info.action == recvmsg)
     {
