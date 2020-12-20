@@ -7,7 +7,7 @@
 #include "openssl-sign-by-ca-master/openssl1.1/main.c"
 
 // Generate and save key and csr. Return csr for get_cert usage
-std::string generate_key_and_csr()
+std::string generate_key_and_csr(const std::string& username)
 {
     // Generate key and csr
     X509_REQ *req = NULL;
@@ -23,7 +23,7 @@ std::string generate_key_and_csr()
     csr_to_pem(req, &csr_bytes, &csr_size);
 
     // Save key to local location and return csr
-    std::ofstream key_pem_file("./my_private_key.pem");
+    std::ofstream key_pem_file("./" + username + "_private_key.pem");
     key_pem_file << key_bytes;
     key_pem_file.close();
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     info.username = std::string(argv[1]);
     info.password = (argc == 2) ? std::string(getpass("Input a password:")) : std::string(argv[2]);
 
-    info.csr = generate_key_and_csr();
+    info.csr = generate_key_and_csr(info.username);
     info.print_info();
 
     std::string code, body;
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     // If get 200 OK, save received certificate
     if (code == "200")
     {
-        std::ofstream certificate_pem_file("./my_certificate.pem");
+        std::ofstream certificate_pem_file("./" + info.username + "_certificate.pem");
         certificate_pem_file << body;
         certificate_pem_file.close();
     }
