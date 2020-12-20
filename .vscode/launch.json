@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "g++ - Build and debug active file",
+            "name": "server sandbox",
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/msg_server_sandbox/${fileBasenameNoExtension}.out",
@@ -19,7 +19,31 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: g++ build active file",
+            "preLaunchTask": "server sandbox",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "get_cert",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}.out",
+            "args": [
+                "addleness",
+                "Cardin_pwns"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "root",
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]

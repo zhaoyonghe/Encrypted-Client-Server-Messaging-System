@@ -15,7 +15,7 @@
 #include "my.hpp"
 #include "client.hpp"
 
-int client_send(Info &info)
+int client_send(Info &info, std::string& code, std::string& body)
 {
     std::string address = "www.msg_server.com";
     char msg_header[50];
@@ -76,5 +76,21 @@ int client_send(Info &info)
     
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
+
+    // Parse the reponse to get http code and body
+    // Find the https code first
+    std::string delimiter = " ";
+    response.erase(0, response.find(delimiter) + delimiter.length());
+    std::string token = response.substr(0, response.find(delimiter));
+    response.erase(0, response.find(delimiter) + delimiter.length());
+    code = token;
+
+    // Get rid of header and get the body
+    delimiter = "\n";
+    response.erase(0, response.find(delimiter) + delimiter.length());
+    response.erase(0, response.find(delimiter) + delimiter.length());
+    response.erase(0, response.find(delimiter) + delimiter.length());
+    body = response;
+
     return 1;
 }
