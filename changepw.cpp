@@ -6,13 +6,14 @@
 #include "client.hpp"
 #include "openssl-sign-by-ca-master/openssl1.1/main.c"
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     Info info;
     info.action = changepw;
     std::string private_key_path = "";
 
-    if (argc <= 1 or argc > 4) {
+    if (argc <= 1 or argc > 4)
+    {
         // argc must be 1 to 3
         fprintf(stderr, "Usage: changepw <username> <password>? <new_password>?");
         exit(1);
@@ -24,7 +25,7 @@ int main(int argc, char* argv[])
     info.new_password = (argc == 3) ? std::string(getpass("Input a new password:")) : std::string(argv[3]);
 
     std::string key, csr;
-    generate_key_and_csr(key, csr);
+    generate_key_and_csr(info.username, key, csr);
     info.csr = csr;
     info.print_info();
 

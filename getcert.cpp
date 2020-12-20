@@ -6,13 +6,14 @@
 #include "client.hpp"
 #include "openssl-sign-by-ca-master/openssl1.1/main.c"
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     Info info;
     info.action = getcert;
     std::string private_key_path = "";
 
-    if (argc <= 1 or argc > 3) {
+    if (argc <= 1 or argc > 3)
+    {
         // argc must be 1 or 2
         fprintf(stderr, "Usage: getcert <username> <password>?");
         exit(1);
@@ -23,7 +24,7 @@ int main(int argc, char* argv[])
     info.password = (argc == 2) ? std::string(getpass("Input a password:")) : std::string(argv[2]);
 
     std::string key, csr;
-    generate_key_and_csr(key, csr);
+    generate_key_and_csr(info.username, key, csr);
     info.csr = csr;
     info.print_info();
 

@@ -18,7 +18,7 @@
 
 static void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size);
 static void csr_to_pem(X509_REQ *req, uint8_t **req_bytes, size_t *req_size);
-static int generate_key_csr(EVP_PKEY **key, X509_REQ **req);
+static int generate_key_csr(const std::string &username, EVP_PKEY **key, X509_REQ **req);
 static int generate_set_random_serial(X509 *crt);
 static int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_PKEY **key, X509 **crt);
 static void key_to_pem(EVP_PKEY *key, uint8_t **key_bytes, size_t *key_size);
@@ -158,7 +158,7 @@ err:
 	return 0;
 }
 
-int generate_key_csr(EVP_PKEY **key, X509_REQ **req)
+int generate_key_csr(const std::string &username, EVP_PKEY **key, X509_REQ **req)
 {
 	*key = NULL;
 	*req = NULL;
@@ -194,7 +194,7 @@ int generate_key_csr(EVP_PKEY **key, X509_REQ **req)
 	X509_NAME_add_entry_by_txt(name, "L", MBSTRING_ASC, (const unsigned char *)REQ_DN_L, -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (const unsigned char *)REQ_DN_O, -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "OU", MBSTRING_ASC, (const unsigned char *)REQ_DN_OU, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (const unsigned char *)REQ_DN_CN, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (const unsigned char *)username.c_str(), -1, -1, 0);
 
 	/* Self-sign the request to prove that we posses the key. */
 	if (!X509_REQ_sign(*req, *key, EVP_sha256()))
@@ -270,34 +270,34 @@ void print_bytes(uint8_t *data, size_t size)
 }
 
 // Generate and save key and csr. Return csr for get_cert usage
-int generate_key_and_csr(std::string& key_out, std::string& csr_out)
+int generate_key_and_csr(const std::string &username, std::string &key_out, std::string &csr_out)
 {
-    // Generate key and csr
-    X509_REQ* req = NULL;
-    EVP_PKEY* key = NULL;
-    generate_key_csr(&key, &req);
+	// Generate key and csr
+	X509_REQ *req = NULL;
+	EVP_PKEY *key = NULL;
+	generate_key_csr(username, &key, &req);
 
-    // Convert key and csr to pem
-    uint8_t* key_bytes = NULL;
-    uint8_t* csr_bytes = NULL;
-    size_t key_size = 0;
-    size_t csr_size = 0;
-    key_to_pem(key, &key_bytes, &key_size);
-    csr_to_pem(req, &csr_bytes, &csr_size);
+	// Convert key and csr to pem
+	uint8_t *key_bytes = NULL;
+	uint8_t *csr_bytes = NULL;
+	size_t key_size = 0;
+	size_t csr_size = 0;
+	key_to_pem(key, &key_bytes, &key_size);
+	csr_to_pem(req, &csr_bytes, &csr_size);
 
-    std::ostringstream csr_pem_stream;
-    csr_pem_stream << csr_bytes;
-    csr_out = csr_pem_stream.str();
+	std::ostringstream csr_pem_stream;
+	csr_pem_stream << csr_bytes;
+	csr_out = csr_pem_stream.str();
 
 	std::ostringstream key_pem_stream;
-    key_pem_stream << key_bytes;
-    key_out = key_pem_stream.str();
+	key_pem_stream << key_bytes;
+	key_out = key_pem_stream.str();
 
-    // Free stuff
-    EVP_PKEY_free(key);
-    X509_REQ_free(req);
-    free(key_bytes);
-    free(csr_bytes);
+	// Free stuff
+	EVP_PKEY_free(key);
+	X509_REQ_free(req);
+	free(key_bytes);
+	free(csr_bytes);
 
 	return 0;
 }
