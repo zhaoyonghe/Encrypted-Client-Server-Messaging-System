@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 {
     Info info;
     info.action = getcert;
+    std::string private_key_path = "";
 
     if (argc <= 1)
     {
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
     info.print_info();
 
     std::string code, body;
-    client_send(info, code, body);
+    client_send(info, code, body, private_key_path);
 
     // If get 200 OK, save received certificate
     if (code == "200")

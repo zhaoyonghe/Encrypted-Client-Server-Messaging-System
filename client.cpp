@@ -15,7 +15,7 @@
 #include "my.hpp"
 #include "client.hpp"
 
-int client_send(Info &info, std::string& code, std::string& body)
+int client_send(Info &info, std::string &code, std::string &body, std::string& private_key_path)
 {
     std::string address = "www.msg_server.com";
     char msg_header[50];
@@ -31,12 +31,17 @@ int client_send(Info &info, std::string& code, std::string& body)
 #endif
 
     // load self certificate, private key and CA certificate (to verify the identity of the connection peer)
-    // if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/client.cert.pem", SSL_FILETYPE_PEM)) {
-    //     my::print_errors_and_exit("Error loading client certificate");
-    // }
-    // if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), "./certs/container/intermediate_ca/private/client.key.pem", SSL_FILETYPE_PEM)) {
-    //     my::print_errors_and_exit("Error loading client private key");
-    // }
+    if (info.action == sendmsg || info.action == recvmsg)
+    {
+        if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), info.cert_path.c_str(), SSL_FILETYPE_PEM))
+        {
+            my::print_errors_and_exit("Error loading client certificate");
+        }
+        if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key_path.c_str(), SSL_FILETYPE_PEM))
+        {
+            my::print_errors_and_exit("Error loading client private key");
+        }
+    }
     if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", nullptr))
     {
         my::print_errors_and_exit("Error setting up trust store");
@@ -64,19 +69,27 @@ int client_send(Info &info, std::string& code, std::string& body)
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
-    if (info.action == getcert || info.action == changepw) {
+    if (info.action == getcert || info.action == changepw)
+    {
         my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
-    } else if (info.action == sendmsg) {
+    }
+    else if (info.action == sendmsg)
+    {
         my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.receipient);
-    } else if (info.action == recvmsg) {
-        // TODO
-    } else {
+    }
+    else if (info.action == recvmsg)
+    {
         // TODO
     }
-    
+    else
+    {
+        return 1;
+    }
+
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
 
+    // TODO: handle wrong format
     // Parse the reponse to get http code and body
     // Find the https code first
     std::string delimiter = " ";
@@ -92,5 +105,5 @@ int client_send(Info &info, std::string& code, std::string& body)
     response.erase(0, response.find(delimiter) + delimiter.length());
     body = response;
 
-    return 1;
+    return 0;
 }
