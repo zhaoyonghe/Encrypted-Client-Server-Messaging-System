@@ -1,5 +1,3 @@
-#include "client.hpp"
-
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -8,15 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "my.hpp"
 
-int client_send(Info& info) {
-    std::string address = "www.mg_server.com";
+#include "my.hpp"
+#include "client.hpp"
+
+int client_send(Info &info)
+{
+    std::string address = "www.msg_server.com";
     char msg_header[50];
     sprintf(msg_header, "POST /%d HTTP/1.1", info.action);
 
@@ -36,15 +36,18 @@ int client_send(Info& info) {
     // if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), "./certs/container/intermediate_ca/private/client.key.pem", SSL_FILETYPE_PEM)) {
     //     my::print_errors_and_exit("Error loading client private key");
     // }
-    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", nullptr)) {
+    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", nullptr))
+    {
         my::print_errors_and_exit("Error setting up trust store");
     }
 
     auto conn_bio = my::UniquePtr<BIO>(BIO_new_connect("localhost:4399"));
-    if (conn_bio == nullptr) {
+    if (conn_bio == nullptr)
+    {
         my::print_errors_and_exit("Error in BIO_new_connect");
     }
-    if (BIO_do_connect(conn_bio.get()) <= 0) {
+    if (BIO_do_connect(conn_bio.get()) <= 0)
+    {
         my::print_errors_and_exit("Error in BIO_do_connect");
     }
     auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 1));
@@ -54,7 +57,8 @@ int client_send(Info& info) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     SSL_set1_host(my::get_ssl(ssl_bio.get()), address.c_str());
 #endif
-    if (BIO_do_handshake(ssl_bio.get()) <= 0) {
+    if (BIO_do_handshake(ssl_bio.get()) <= 0)
+    {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());

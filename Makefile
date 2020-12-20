@@ -14,6 +14,7 @@ server:
 	rm -rf $(SERVER_SANDBOX)
 	mkdir -p $(SERVER_SANDBOX)
 	mkdir -p $(SERVER_SANDBOX)/certs
+	mkdir -p $(SERVER_SANDBOX)/certs/users
 	mkdir -p $(SERVER_SANDBOX)/private
 	mkdir -p $(SERVER_SANDBOX)/hashed_pw
 	g++ -o server.out server.cpp -lssl -lcrypto -lcrypt

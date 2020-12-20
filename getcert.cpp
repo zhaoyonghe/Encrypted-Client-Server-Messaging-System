@@ -1,16 +1,58 @@
-#include "client.hpp"
 #include <unistd.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
-int main(int argc, char *argv[]) {
+#include "client.hpp"
+#include "openssl-sign-by-ca-master/openssl1.1/main.c"
+
+// Generate and save key and csr. Return csr for get_cert usage
+std::string generate_key_and_csr()
+{
+    // Generate key and csr
+    X509_REQ *req = NULL;
+    EVP_PKEY *key = NULL;
+    generate_key_csr(&key, &req);
+
+    // Convert key and csr to pem
+    uint8_t *key_bytes = NULL;
+    uint8_t *csr_bytes = NULL;
+    size_t key_size = 0;
+    size_t csr_size = 0;
+    key_to_pem(key, &key_bytes, &key_size);
+    csr_to_pem(req, &csr_bytes, &csr_size);
+
+    // Save key to local location and return csr
+    std::ofstream key_pem_file("./my_private_key.pem");
+    key_pem_file << key_bytes;
+    key_pem_file.close();
+
+    std::ostringstream csr_pem_stream;
+    csr_pem_stream << csr_bytes;
+    std::string csr_pem_string = csr_pem_stream.str();
+
+    // Free stuff
+    EVP_PKEY_free(key);
+    X509_REQ_free(req);
+    free(key_bytes);
+    free(csr_bytes);
+
+    return csr_pem_string;
+}
+
+int main(int argc, char *argv[])
+{
     Info info;
     info.action = getcert;
 
-    if (argc <= 1) {
+    if (argc <= 1)
+    {
         fprintf(stderr, "Please enter enough parameters!\n");
         exit(1);
     }
 
-    if (argc > 3) {
+    if (argc > 3)
+    {
         fprintf(stderr, "Too many parameters!");
         exit(1);
     }
@@ -19,28 +61,9 @@ int main(int argc, char *argv[]) {
     info.username = std::string(argv[1]);
     info.password = (argc == 2) ? std::string(getpass("Input a password:")) : std::string(argv[2]);
 
-    // TODO: create csr
-    info.csr = "-----BEGIN CERTIFICATE REQUEST-----\n\
-MIIC3DCCAcQCAQAwgZYxCzAJBgNVBAYTAkNOMRAwDgYDVQQIDAdUaWFuamluMRgw\n\
-FgYDVQQHDA9OYW5rYWkgRGlzdHJpY3QxGDAWBgNVBAoMD05hbmthaSBTb2Z0d2Fy\n\
-ZTELMAkGA1UECwwCSVQxEDAOBgNVBAMMB3N0dWRlbnQxIjAgBgkqhkiG9w0BCQEW\n\
-E2lhbWFzdHVkZW50QGFiYy5lZHUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n\
-AoIBAQC5gdFjZ3H6Bdku5hkJt7CJ+m/KKkN274zbsztxCrcznMAm3QRsI+/mYEnb\n\
-Lqm7HhKWTsbhRWp51lljVudeZTe2HpW6sqJeuBEK35v9y/eUZoC7A4Q5/SMIRvDg\n\
-ItUdYES/FG+F1bPZ1bAP8M6rI9ZdTxbquxiqFy9aFIY+3NnPjiIPixfEJpUqYuRP\n\
-nsuoHprKpyGc4aGTa4ZhOY8Q8zIs6/Vu7EYm9oNGphgt61lyVwgtjIdqCAZizNcD\n\
-TTwDDLDFn8AezMxpUFssk1iIgnfQhT5QF6YFXhzqrgSixm9LKGLQ++GgpI7ooP8p\n\
-5Kaa0HQEHCwhUCPalR9bFxCEZ1vXAgMBAAGgADANBgkqhkiG9w0BAQsFAAOCAQEA\n\
-JwWem2iTHyyj53NMXtN61oLKlVVHoW1U1g20G1TPCuYa3sjFR8zUMgwcYbcL53ZT\n\
-Zjs8EbnyC+XtYduP6kFjf6A8caw5My2sSB74+NPFTPncY5CYTXFh4ast9JlNTdtt\n\
-kgdpT/z2fo2muE5IkpxWk9OoUOm0cTss80XGG0YFsPKVzSQld+ot7uOFdxr/NMSf\n\
-RcMnSflUuKOnJgcR7SwLFEdlGAe2S8Eq7PkuogzRgg+3aivx2dBeLg8QdC1GW3oB\n\
-mujoM8gnDn+lwfqFEkd5+F+GfcoddJL7TOdzATr9Bilao8hmdt7NjlzWhmy12sCF\n\
-88cXgEyj2FHdlyvVr1m65A==\n\
------END CERTIFICATE REQUEST-----\n\
-";
-
+    info.csr = generate_key_and_csr();
     info.print_info();
-
     client_send(info);
+
+    // TODO: Save received certificate
 }
