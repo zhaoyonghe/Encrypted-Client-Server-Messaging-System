@@ -268,3 +268,36 @@ void print_bytes(uint8_t *data, size_t size)
 		printf("%c", data[i]);
 	}
 }
+
+// Generate and save key and csr. Return csr for get_cert usage
+int generate_key_and_csr(std::string& key_out, std::string& csr_out)
+{
+    // Generate key and csr
+    X509_REQ* req = NULL;
+    EVP_PKEY* key = NULL;
+    generate_key_csr(&key, &req);
+
+    // Convert key and csr to pem
+    uint8_t* key_bytes = NULL;
+    uint8_t* csr_bytes = NULL;
+    size_t key_size = 0;
+    size_t csr_size = 0;
+    key_to_pem(key, &key_bytes, &key_size);
+    csr_to_pem(req, &csr_bytes, &csr_size);
+
+    std::ostringstream csr_pem_stream;
+    csr_pem_stream << csr_bytes;
+    csr_out = csr_pem_stream.str();
+
+	std::ostringstream key_pem_stream;
+    key_pem_stream << key_bytes;
+    key_out = key_pem_stream.str();
+
+    // Free stuff
+    EVP_PKEY_free(key);
+    X509_REQ_free(req);
+    free(key_bytes);
+    free(csr_bytes);
+
+	return 0;
+}
