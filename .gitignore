@@ -1,2 +1,3 @@
 *.out
 **/server_signed_certificate.pem
+my_private_key.pem

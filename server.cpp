@@ -13,12 +13,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "openssl-sign-by-ca-master/openssl1.1/main.c"
 #include <sys/stat.h>
 #include <ctype.h>
+#include <streambuf>
 
 #include "info.hpp"
 #include "my.hpp"
+#include "openssl-sign-by-ca-master/openssl1.1/main.c"
 
 Action char_to_action(char c) {
     if (!isdigit(c)) {
@@ -114,6 +115,7 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     print_bytes(crt_bytes, crt_size);
 
     // Save signed certificate
+    // TODO: Save with username
     std::ofstream certificate_pem_file("./certs/server_signed_certificate.pem");
     certificate_pem_file << crt_bytes;
     certificate_pem_file.close();
@@ -127,7 +129,11 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     //free(key_bytes);
     free(crt_bytes);
 
-    return "signed certificate is sent";
+    // Send the signed certificate back
+    std::ofstream certificate_pem_file("./certs/server_signed_certificate.pem");
+    std::string certificate((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+
+    return "signed certificate is sent:\n" + certificate;
 }
 
 int main() {
@@ -187,11 +193,12 @@ int main() {
                     printf("%d--\n", info.from_string(body));
                     info.print_info();
 
-                    // TODO: what are correct username/password
-                    // if(verify_password(info.username, info.password)){
-                        
-                    // }
-                    response = handle_getcert(ca_cert_path, ca_key_path, info.csr);
+                    // TODO: http format response
+                    if(verify_password(info.username, info.password)){
+                        response = handle_getcert(ca_cert_path, ca_key_path, info.csr);
+                    }else{
+                        response = "username password mismatch";
+                    }
                 }
                 break;
             case changepw:
@@ -211,6 +218,7 @@ int main() {
 
             my::send_http_response(conn_bio.get(), response);
         } catch (const std::exception& ex) {
+            // TODO: crash on error?
             printf("Worker exited with exception:\n%s\n", ex.what());
         }
     }
