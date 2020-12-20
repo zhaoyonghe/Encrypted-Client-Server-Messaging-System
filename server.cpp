@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <exception>      
 #include <streambuf>
+#include <chrono>
 
 
 #include "info.hpp"
@@ -138,7 +139,52 @@ std::string handle_getcert(std::string& response, std::string& ca_cert_path, std
     return "200";
 }
 
-std::string handle_sendmsg() {
+std::string handle_sendmsg_get_recipient_cert(std::string& response, const std::string& recipient) {
+    if (!my::is_valid_safe_username(recipient)) {
+        response = "The user name is not valid and safe.";
+        return "406";
+    }
+
+    struct stat buffer;
+    std::string recipient_cert_path = "./certs/users/" + recipient + "_certificate.pem";
+    if (stat(recipient_cert_path.c_str(), &buffer) != 0) {
+        // This user does not exist.
+        response = "No such user or this user does not have a certificate.";
+        return "400";
+    }
+
+    std::ifstream t(recipient_cert_path);
+    std::stringstream stream;
+    stream << t.rdbuf();
+
+    response = stream.str();
+    return "200";
+}
+
+std::string get_cur_timestamp() {
+    using namespace std::chrono;
+    auto ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    std::string s = std::to_string(ms);
+    return s;
+}
+
+std::string handle_sendmsg_send_encrypted_signed_message(std::string& response, Info& info) {
+    if (!my::is_valid_safe_username(info.recipient)) {
+        response = "The user name is not valid and safe.";
+        return "406";
+    }
+
+    struct stat buffer;
+    std::string recipient_path = "./users/" + info.recipient;
+    if (stat(recipient_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR)) {
+        // This user does not exist (no such directory).
+        response = "No such user or this user does not have a certificate.";
+        return "400";
+    }
+
+    std::ofstream certificate_pem_file("./users/" + info.recipient + "/" + get_cur_timestamp());
+    certificate_pem_file << info.encrypted_signed_message;
+    certificate_pem_file.close();
     return "200";
 }
 
@@ -209,8 +255,21 @@ int main() {
                 }
             } else if (action == changepw) {
                 action_string = "changepw";
-            } else if (action == sendmsg) {
-                action_string = "sendmsg";
+            } else if (action == sendmsg_get_recipient_cert) {
+                action_string = "sendmsg_get_recipient_cert";
+                char* end_of_headers = strstr(&request[0], "\r\n\r\n");
+                std::string recipient = std::string(end_of_headers + 4, &request[request.size()]);
+                printf("recipient:[%s]\n", recipient.c_str());
+                http_code = handle_sendmsg_get_recipient_cert(response, recipient);
+            } else if (action == sendmsg_send_encrypted_signed_message) {
+                action_string = "sendmsg_send_encrypted_signed_message";
+                Info info;
+                char* end_of_headers = strstr(&request[0], "\r\n\r\n");
+                std::string body = std::string(end_of_headers + 4, &request[request.size()]);
+                printf("%s\n", body.c_str());
+                printf("%d--\n", info.from_string(body));
+                info.print_info();
+                http_code = handle_sendmsg_send_encrypted_signed_message(response, info);
             } else if (action == recvmsg) {
                 action_string = "recvmsg";
             } else {

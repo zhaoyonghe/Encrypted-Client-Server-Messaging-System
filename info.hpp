@@ -1,35 +1,32 @@
+#ifndef INFO_HPP
+#define INFO_HPP
+
 #include <string>
 #include <vector>
 #include <cstring>
-
 
 // Represent all possible actions.
 enum Action {
     getcert,
     changepw,
-    sendmsg,
+    sendmsg_get_recipient_cert,
+    sendmsg_send_encrypted_signed_message,
     recvmsg,
     unsupport,
-};
-
-enum Stage {
-    get_recipient_cert = 1,
-    send_encrypted_signed_message
 };
 
 // Represent info sent by the client to the server.
 class Info {
 public:
-    const static int ENCODED_FIELD_NUM = 4;
+    const static int ENCODED_FIELD_NUM = 6;
     Action action;
-    Stage stage;
     std::string username;
     std::string password;
     std::string new_password;
     std::string csr;
-    std::string cert_path;
     std::string recipient;
     std::string encrypted_signed_message;
+    std::string cert_path;
 
     Info() = default;
 
@@ -44,7 +41,7 @@ public:
 
     std::string to_string() {
         std::string info_str;
-        info_str.append(username).append(password).append(new_password).append(csr);
+        info_str.append(username).append(password).append(new_password).append(csr).append(recipient).append(encrypted_signed_message);
 
         int break_down = username.length();
         info_str.append("|").append(std::to_string(break_down));
@@ -53,6 +50,10 @@ public:
         break_down += new_password.length();
         info_str.append(",").append(std::to_string(break_down));
         break_down += csr.length();
+        info_str.append(",").append(std::to_string(break_down));
+        break_down += recipient.length();
+        info_str.append(",").append(std::to_string(break_down));
+        break_down += encrypted_signed_message.length();
         info_str.append(",").append(std::to_string(break_down));
         info_str.append(",");
         return info_str;
@@ -77,6 +78,8 @@ public:
         password = info_string.substr(positions[0], positions[1] - positions[0]);
         new_password = info_string.substr(positions[1], positions[2] - positions[1]);
         csr = info_string.substr(positions[2], positions[3] - positions[2]);
+        recipient = info_string.substr(positions[3], positions[4] - positions[3]);
+        encrypted_signed_message = info_string.substr(positions[4], positions[5] - positions[4]);
 
         return true;
     }
@@ -95,3 +98,5 @@ private:
         return positions;
     }
 };
+
+#endif

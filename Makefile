@@ -36,7 +36,7 @@ changepw:
 	g++ -o changepw.out changepw.cpp client.cpp -lssl -lcrypto
 
 sendmsg:
-	g++ -o sendmsg.out sendmsg.cpp client.cpp -lssl -lcrypto
+	g++ -o sendmsg.out sendmsg.cpp client.cpp cms.cpp my.cpp -lssl -lcrypto
 
 recvmsg:
 	g++ -o recvmsg.out recvmsg.cpp client.cpp -lssl -lcrypto
@@ -47,3 +47,5 @@ cms:
 clean:
 	rm -rf *.out
 	rm -rf $(SERVER_SANDBOX)
+	rm -rf *.txt
+	rm -rf *.pem

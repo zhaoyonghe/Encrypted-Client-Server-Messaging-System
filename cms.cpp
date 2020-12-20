@@ -6,15 +6,14 @@
 #include <iostream>
 #include <sstream>
 
-#include "my.hpp"
 #include "cms.hpp"
 
 // encrypt the message in msg_path and write to encrypted_msg.txt
 int cms_enc(std::string& recipient_cert, std::string& msg_path) {
-    BIO *in = NULL, *out = NULL, *tbio = NULL;
-    X509 *rcert = NULL;
-    STACK_OF(X509) *recips = NULL;
-    CMS_ContentInfo *cms = NULL;
+    BIO* in = NULL, * out = NULL, * tbio = NULL;
+    X509* rcert = NULL;
+    STACK_OF(X509)* recips = NULL;
+    CMS_ContentInfo* cms = NULL;
     int ret = 1;
 
     /*
@@ -31,7 +30,7 @@ int cms_enc(std::string& recipient_cert, std::string& msg_path) {
 
     if (!tbio)
         goto err;
-    
+
     rcert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
 
     if (!rcert)
@@ -71,7 +70,7 @@ int cms_enc(std::string& recipient_cert, std::string& msg_path) {
 
     ret = 0;
 
- err:
+err:
 
     if (ret) {
         fprintf(stderr, "Error Encrypting Data\n");
@@ -88,10 +87,10 @@ int cms_enc(std::string& recipient_cert, std::string& msg_path) {
 }
 
 int cms_dec(std::string& cert_path, std::string& pri_key_path, BIO* encrypted_msg) {
-    BIO *out = NULL, *cbio = NULL, *kbio = NULL;
-    X509 *mcert = NULL;
-    EVP_PKEY *mkey = NULL;
-    CMS_ContentInfo *cms = NULL;
+    BIO* out = NULL, * cbio = NULL, * kbio = NULL;
+    X509* mcert = NULL;
+    EVP_PKEY* mkey = NULL;
+    CMS_ContentInfo* cms = NULL;
     int ret = 1;
 
     OpenSSL_add_all_algorithms();
@@ -126,7 +125,7 @@ int cms_dec(std::string& cert_path, std::string& pri_key_path, BIO* encrypted_ms
 
     ret = 0;
 
- err:
+err:
 
     if (ret) {
         fprintf(stderr, "Error Decrypting Data\n");
@@ -144,10 +143,10 @@ int cms_dec(std::string& cert_path, std::string& pri_key_path, BIO* encrypted_ms
 }
 
 int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
-    BIO *in = NULL, *out = NULL, *cbio = NULL, *kbio = NULL;
-    X509 *mcert = NULL;
-    EVP_PKEY *mkey = NULL;
-    CMS_ContentInfo *cms = NULL;
+    BIO* in = NULL, * out = NULL, * cbio = NULL, * kbio = NULL;
+    X509* mcert = NULL;
+    EVP_PKEY* mkey = NULL;
+    CMS_ContentInfo* cms = NULL;
     int ret = 1;
 
     /*
@@ -186,21 +185,25 @@ int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
     if (!cms)
         goto err;
 
-    out = BIO_new_file("smout.txt", "w");
-    if (!out)
-        goto err;
+
 
     if (!(flags & CMS_STREAM))
         BIO_reset(in);
 
     /* Write out S/MIME message */
-    if (!SMIME_write_CMS(out, cms, in, flags))
-        goto err;
+    if (msg == NULL) {
+        out = BIO_new_file("smout.txt", "w");
+        if (!out)
+            goto err;
+        msg = out;
+    }
+
     if (!SMIME_write_CMS(msg, cms, in, flags))
         goto err;
+
     ret = 0;
 
- err:
+err:
 
     if (ret) {
         fprintf(stderr, "Error Signing Data\n");
@@ -217,14 +220,13 @@ int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
     return ret;
 }
 
-int cms_verify(std::string& signer_cert, std::string& ca_chain_path)
-{
-    BIO *in = NULL, *out = NULL, *sbio = NULL, *tbio = NULL, *cont = NULL;
-    X509_STORE *st = NULL;
-    X509 *cacert = NULL;
-    X509 *scert = NULL;
-    STACK_OF(X509) *signers = NULL;
-    CMS_ContentInfo *cms = NULL;
+int cms_verify(std::string& signer_cert, std::string& ca_chain_path, int chain_depth) {
+    BIO* in = NULL, * out = NULL, * sbio = NULL, * tbio = NULL, * cont = NULL;
+    X509_STORE* st = NULL;
+    X509* cacert = NULL;
+    X509* scert = NULL;
+    STACK_OF(X509)* signers = NULL;
+    CMS_ContentInfo* cms = NULL;
 
     int ret = 1;
 
@@ -251,16 +253,15 @@ int cms_verify(std::string& signer_cert, std::string& ca_chain_path)
     tbio = BIO_new_file(ca_chain_path.c_str(), "r");
     if (!tbio)
         goto err;
-    cacert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
-    if (!cacert)
-        goto err;
-    if (!X509_STORE_add_cert(st, cacert))
-        goto err;
-    cacert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
-    if (!cacert)
-        goto err;
-    if (!X509_STORE_add_cert(st, cacert))
-        goto err;
+
+    while (chain_depth > 0) {
+        cacert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
+        if (!cacert)
+            goto err;
+        if (!X509_STORE_add_cert(st, cacert))
+            goto err;
+        chain_depth--;
+    }
 
     /* Open message being verified */
 
@@ -289,7 +290,7 @@ int cms_verify(std::string& signer_cert, std::string& ca_chain_path)
 
     ret = 0;
 
- err:
+err:
 
     if (ret) {
         fprintf(stderr, "Error Verifying Data\n");

@@ -13,10 +13,10 @@
 #include <iostream>
 
 #include "my.hpp"
+#include "info.hpp"
 #include "client.hpp"
 
-int client_send(Info &info, std::string &code, std::string &body, std::string &private_key_path)
-{
+int client_send(Info& info, std::string& code, std::string& body, std::string& private_key_path) {
     std::string address = "www.msg_server.com";
     char msg_header[50];
     sprintf(msg_header, "POST /%d HTTP/1.1", info.action);
@@ -31,29 +31,24 @@ int client_send(Info &info, std::string &code, std::string &body, std::string &p
 #endif
 
     // load self certificate, private key and CA certificate (to verify the identity of the connection peer)
-    if (info.action == sendmsg || info.action == recvmsg)
-    {
-        if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), info.cert_path.c_str(), SSL_FILETYPE_PEM))
-        {
+    // TODO: add peer verification for sendmsg
+    if (info.action == recvmsg) {
+        if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), info.cert_path.c_str(), SSL_FILETYPE_PEM)) {
             my::print_errors_and_exit("Error loading client certificate");
         }
-        if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key_path.c_str(), SSL_FILETYPE_PEM))
-        {
+        if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key_path.c_str(), SSL_FILETYPE_PEM)) {
             my::print_errors_and_exit("Error loading client private key");
         }
     }
-    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", nullptr))
-    {
+    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", nullptr)) {
         my::print_errors_and_exit("Error setting up trust store");
     }
 
     auto conn_bio = my::UniquePtr<BIO>(BIO_new_connect("localhost:4399"));
-    if (conn_bio == nullptr)
-    {
+    if (conn_bio == nullptr) {
         my::print_errors_and_exit("Error in BIO_new_connect");
     }
-    if (BIO_do_connect(conn_bio.get()) <= 0)
-    {
+    if (BIO_do_connect(conn_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_connect");
     }
     auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 1));
@@ -63,37 +58,20 @@ int client_send(Info &info, std::string &code, std::string &body, std::string &p
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     SSL_set1_host(my::get_ssl(ssl_bio.get()), address.c_str());
 #endif
-    if (BIO_do_handshake(ssl_bio.get()) <= 0)
-    {
+    if (BIO_do_handshake(ssl_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
-    if (info.action == getcert || info.action == changepw)
-    {
+    if (info.action == getcert || info.action == changepw) {
         my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
-    }
-    else if (info.action == sendmsg)
-    {
-        if (info.stage == get_recipient_cert)
-        {
-            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.recipient);
-        }
-        else if (info.stage == send_encrypted_signed_message)
-        {
-            my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.encrypted_signed_message);
-        }
-        else
-        {
-            // TODO
-        }
-    }
-    else if (info.action == recvmsg)
-    {
+    } else if (info.action == sendmsg_get_recipient_cert) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.recipient);
+    } else if (info.action == sendmsg_send_encrypted_signed_message) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+    } else if (info.action == recvmsg) {
         // TODO
-    }
-    else
-    {
+    } else {
         return 1;
     }
 
