@@ -19,7 +19,7 @@ server:
 	mkdir -p $(SERVER_SANDBOX_PRIVATE)
 	mkdir -p $(SERVER_SANDBOX_HASHED_PW)
 	mkdir -p $(SERVER_SANDBOX_USERS)
-	g++ -o server.out server.cpp -lssl -lcrypto -lcrypt
+	g++ -o server.out server.cpp my.cpp -lssl -lcrypto -lcrypt
 	cp server.out $(SERVER_SANDBOX)
 	cp certs/container/intermediate_ca/certs/msg_server.cert.pem $(SERVER_SANDBOX_CERTS)/msg_server.cert.pem
 	cp certs/container/intermediate_ca/certs/ca-chain.cert.pem $(SERVER_SANDBOX_CERTS)/ca-chain.cert.pem
@@ -30,10 +30,10 @@ server:
 	cp -r users/users/* $(SERVER_SANDBOX_USERS)
 
 getcert:
-	g++ -o getcert.out getcert.cpp client.cpp -lssl -lcrypto
+	g++ -o getcert.out getcert.cpp client.cpp my.cpp -lssl -lcrypto
 
 changepw:
-	g++ -o changepw.out changepw.cpp client.cpp -lssl -lcrypto
+	g++ -o changepw.out changepw.cpp client.cpp my.cpp -lssl -lcrypto
 
 sendmsg:
 	g++ -o sendmsg.out sendmsg.cpp client.cpp cms.cpp my.cpp -lssl -lcrypto
