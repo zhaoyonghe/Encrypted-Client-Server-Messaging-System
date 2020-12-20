@@ -1,7 +1,7 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
+            "type": "process",
             "label": "C/C++: g++ build active file",
             "command": "/usr/bin/g++",
             "args": [
@@ -16,9 +16,21 @@
             "options": {
                 "cwd": "${workspaceFolder}/msg_server_sandbox"
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true

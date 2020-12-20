@@ -191,12 +191,13 @@ int main()
 
     printf("Server running\n");
 
-    while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get()))
+    while (true)
     {
-        conn_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
+        //BIO_reset(accept_bio.get());
+        auto conn_bio = my::accept_new_tcp_connection(accept_bio.get());
+        auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
         try {
-            std::cout << "fucking0" << std::endl;
-            std::string request = my::receive_http_message(conn_bio.get());
+            std::string request = my::receive_http_message(ssl_bio.get());
             printf("Got request:\n");
             printf("%s\n", request.c_str());
 
@@ -242,11 +243,9 @@ int main()
             }
 
             printf("Got action: %s\n", action_string.c_str());
-            my::send_http_response(conn_bio.get(), http_code, response);
+            my::send_http_response(ssl_bio.get(), http_code, response);
         } catch (const std::exception& ex) {
-            // TODO: crash on error?
-            const char* a = ex.what();
-            printf("Worker exited with exception:\n%s\n", a);
+            printf("Worker exited with exception:\n%s\n", ex.what());
         }
     }
     printf("\nClean exit!\n");

@@ -10,10 +10,7 @@
             "request": "launch",
             "program": "${fileDirname}/msg_server_sandbox/${fileBasenameNoExtension}.out",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}/msg_server_sandbox",
-            "environment": [],
-            "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
                 {

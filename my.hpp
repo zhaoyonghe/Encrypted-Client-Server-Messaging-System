@@ -226,12 +226,14 @@ namespace my
         {
             const char *message = X509_verify_cert_error_string(err);
             fprintf(stderr, "Certificate verification error: %s (%d)\n", message, err);
+            std::cout << SSL_shutdown(ssl);
             exit(1);
         }
         X509 *cert = SSL_get_peer_certificate(ssl);
         if (cert == nullptr)
         {
             fprintf(stderr, "No certificate was presented by the server\n");
+            SSL_shutdown(ssl);
             exit(1);
         }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L

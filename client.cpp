@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "my.hpp"
 #include "client.hpp"
