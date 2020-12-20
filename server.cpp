@@ -242,7 +242,7 @@ int main()
             }
 
             printf("Got action: %s\n", action_string.c_str());
-            my::send_http_response(conn_bio.get(), response);
+            my::send_http_response(conn_bio.get(), http_code, response);
         } catch (const std::exception& ex) {
             // TODO: crash on error?
             const char* a = ex.what();
