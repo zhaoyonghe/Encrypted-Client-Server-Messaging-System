@@ -1,1 +1,2 @@
 *.out
+**/server_signed_certificate.pem
