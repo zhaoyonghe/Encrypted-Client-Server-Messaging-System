@@ -30,6 +30,13 @@ std::string generate_key_and_csr()
     std::ostringstream csr_pem_stream;
     csr_pem_stream << csr_bytes;
     std::string csr_pem_string = csr_pem_stream.str();
+
+    // Free stuff
+    EVP_PKEY_free(key);
+    X509_REQ_free(req);
+    free(key_bytes);
+    free(csr_bytes);
+
     return csr_pem_string;
 }
 
@@ -57,4 +64,6 @@ int main(int argc, char *argv[])
     info.csr = generate_key_and_csr();
     info.print_info();
     client_send(info);
+
+    // TODO: Save received certificate
 }

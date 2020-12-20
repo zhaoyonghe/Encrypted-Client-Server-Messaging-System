@@ -21,47 +21,57 @@
 #include "my.hpp"
 #include "openssl-sign-by-ca-master/openssl1.1/main.c"
 
-Action char_to_action(char c) {
-    if (!isdigit(c)) {
+Action char_to_action(char c)
+{
+    if (!isdigit(c))
+    {
         return unsupport;
     }
     return ((c - '0') >= unsupport) ? unsupport : (Action)(c - '0');
 }
 
-Action get_action_from_request(std::string& request, int index) {
-    if (index >= request.length()) {
+Action get_action_from_request(std::string &request, int index)
+{
+    if (index >= request.length())
+    {
         return unsupport;
     }
     return char_to_action(request[index]);
 }
 
-Action get_action_from_request(std::string& request) {
+Action get_action_from_request(std::string &request)
+{
     std::string header_get = "GET /";
     std::string header_post = "POST /";
 
     std::size_t get_index = request.find(header_get);
-    if (get_index != std::string::npos) {
+    if (get_index != std::string::npos)
+    {
         return get_action_from_request(request, get_index + header_get.length());
     }
 
     std::size_t post_index = request.find(header_post);
-    if (post_index != std::string::npos) {
+    if (post_index != std::string::npos)
+    {
         return get_action_from_request(request, post_index + header_post.length());
     }
 
     return unsupport;
 }
 
-bool verify_password(std::string username, std::string password) {
+bool verify_password(std::string username, std::string password)
+{
     std::string hased_pw_path = "hashed_pw/" + username;
     struct stat buffer;
 
-    if (stat(hased_pw_path.c_str(), &buffer) != 0) {
+    if (stat(hased_pw_path.c_str(), &buffer) != 0)
+    {
         // This user does not exist.
         return false;
     }
 
-    if (buffer.st_size != 106) {
+    if (buffer.st_size != 106)
+    {
         // This file might be tampered.
         return false;
     }
@@ -74,8 +84,9 @@ bool verify_password(std::string username, std::string password) {
 }
 
 // Simply sign a new certificate for client and send it to client
+// Returns http code
 // TODO: How to specify configuration?
-std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, std::string &csr_string)
+std::string handle_getcert(std::string &response, std::string &ca_cert_path, std::string &ca_key_path, std::string &csr_string, std::string username)
 {
     // Load CA key and cert.
     EVP_PKEY *ca_key = NULL;
@@ -84,7 +95,8 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     {
         std::string err_msg = "Failed to load CA certificate and/or key!\n";
         std::cout << err_msg;
-        return err_msg;
+        response = err_msg;
+        return "400";
     }
 
     // Load certificate signing request
@@ -100,7 +112,8 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     {
         std::string err_msg = "Failed to generate key pair!\n";
         std::cout << err_msg;
-        return err_msg;
+        response = err_msg;
+        return "406";
     }
 
     // Convert key and certificate to PEM format.
@@ -115,10 +128,13 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     print_bytes(crt_bytes, crt_size);
 
     // Save signed certificate
-    // TODO: Save with username
-    std::ofstream certificate_pem_file("./certs/server_signed_certificate.pem");
+    std::ofstream certificate_pem_file("./certs/users/" + username + "_certificate.pem");
     certificate_pem_file << crt_bytes;
     certificate_pem_file.close();
+
+    std::ostringstream certificate_pem_stream;
+    certificate_pem_stream << crt_bytes;
+    std::string certificate_pem_string = certificate_pem_stream.str();
 
     // Free stuff.
     EVP_PKEY_free(ca_key);
@@ -129,14 +145,12 @@ std::string handle_getcert(std::string &ca_cert_path, std::string &ca_key_path, 
     //free(key_bytes);
     free(crt_bytes);
 
-    // Send the signed certificate back
-    std::ofstream certificate_pem_file("./certs/server_signed_certificate.pem");
-    std::string certificate((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-
-    return "signed certificate is sent:\n" + certificate;
+    response = certificate_pem_string;
+    return "200";
 }
 
-int main() {
+int main()
+{
     std::string ca_cert_path = "./certs/intermediate_ca.cert.pem";
     std::string ca_key_path = "./private/intermediate_ca.key.pem";
 
@@ -149,18 +163,22 @@ int main() {
     SSL_CTX_set_min_proto_version(ssl_ctx.get(), TLS1_2_VERSION);
 #endif
 
-    if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), "certs/msg_server.cert.pem", SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), "certs/msg_server.cert.pem", SSL_FILETYPE_PEM))
+    {
         my::print_errors_and_exit("Error loading server certificate");
     }
-    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), "private/msg_server.key.pem", SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), "private/msg_server.key.pem", SSL_FILETYPE_PEM))
+    {
         my::print_errors_and_exit("Error loading server private key");
     }
-    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "certs/ca-chain.cert.pem", nullptr)) {
+    if (!SSL_CTX_load_verify_locations(ssl_ctx.get(), "certs/ca-chain.cert.pem", nullptr))
+    {
         my::print_errors_and_exit("Error setting up trust store");
     }
 
     auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept("4399"));
-    if (BIO_do_accept(accept_bio.get()) <= 0) {
+    if (BIO_do_accept(accept_bio.get()) <= 0)
+    {
         my::print_errors_and_exit("Error in BIO_do_accept (binding to port 4399)");
     }
 
@@ -171,9 +189,11 @@ int main() {
 
     printf("Server running\n");
 
-    while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get())) {
+    while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get()))
+    {
         conn_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
-        try {
+        try
+        {
             std::string request = my::receive_http_message(conn_bio.get());
             printf("Got request:\n");
             printf("%s\n", request.c_str());
@@ -182,22 +202,27 @@ int main() {
             int action = get_action_from_request(request);
             std::string action_string;
             std::string response = "okay cool\n";
-            switch (action) {
+            std::string http_code = "200";
+            switch (action)
+            {
             case getcert:
                 action_string = "getcert";
                 {
                     Info info;
-                    char* end_of_headers = strstr(&request[0], "\r\n\r\n");
+                    char *end_of_headers = strstr(&request[0], "\r\n\r\n");
                     std::string body = std::string(end_of_headers + 4, &request[request.size()]);
                     printf("%s\n", body.c_str());
                     printf("%d--\n", info.from_string(body));
                     info.print_info();
 
-                    // TODO: http format response
-                    if(verify_password(info.username, info.password)){
-                        response = handle_getcert(ca_cert_path, ca_key_path, info.csr);
-                    }else{
-                        response = "username password mismatch";
+                    if (verify_password(info.username, info.password))
+                    {
+                        http_code = handle_getcert(response, ca_cert_path, ca_key_path, info.csr, info.username);
+                    }
+                    else
+                    {
+                        http_code = "401";
+                        response = "username password mismatch\n";
                     }
                 }
                 break;
@@ -215,9 +240,10 @@ int main() {
             }
 
             printf("Got action: %s\n", action_string.c_str());
-
-            my::send_http_response(conn_bio.get(), response);
-        } catch (const std::exception& ex) {
+            my::send_http_response(conn_bio.get(), http_code, response);
+        }
+        catch (const std::exception &ex)
+        {
             // TODO: crash on error?
             printf("Worker exited with exception:\n%s\n", ex.what());
         }
