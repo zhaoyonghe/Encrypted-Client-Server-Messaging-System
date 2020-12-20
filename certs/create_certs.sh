@@ -34,12 +34,11 @@ echo 1000 > ${ROOT_CA_DIR}/serial
 touch ${ROOT_CA_DIR}/index.txt.attr
 
 new_step "Generate key pair for the root ca"
-openssl genrsa -aes256 -passout pass:yyyy -out ${ROOT_CA_DIR}/private/root_ca.key.pem
+openssl genrsa -out ${ROOT_CA_DIR}/private/root_ca.key.pem
 chmod 400 ${ROOT_CA_DIR}/private/root_ca.key.pem
 new_step "Generate a self-signed root ca certificate"
 openssl req -config ${ROOT_CA_DIR}/root_ca.cnf \
     -key ${ROOT_CA_DIR}/private/root_ca.key.pem \
-    -passin pass:yyyy \
     -new -x509 -days 7300 -sha256 -extensions v3_ca \
     -out ${ROOT_CA_DIR}/certs/root_ca.cert.pem
 chmod 444 ${ROOT_CA_DIR}/certs/root_ca.cert.pem
@@ -66,16 +65,16 @@ touch ${INTERMEDIATE_CA_DIR}/index.txt.attr
 
 new_step "Generate key pair for the intermediate ca"
 # TODO: maybe need a input password file?
-openssl genrsa -aes256 -passout pass:yyyy -out ${INTERMEDIATE_CA_DIR}/private/intermediate_ca.key.pem
+openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/intermediate_ca.key.pem
 chmod 400 ${INTERMEDIATE_CA_DIR}/private/intermediate_ca.key.pem
 new_step "Generate an intermediate ca CSR"
 openssl req -config ${INTERMEDIATE_CA_DIR}/intermediate_ca.cnf \
-    -new -sha256 -passin pass:yyyy \
+    -new -sha256 \
     -key ${INTERMEDIATE_CA_DIR}/private/intermediate_ca.key.pem \
     -out ${INTERMEDIATE_CA_DIR}/csr/intermediate_ca.csr.pem
 new_step "The root ca gives the intermediate ca a signed certificate based on its CSR"
 openssl ca -config ${ROOT_CA_DIR}/root_ca.cnf -extensions v3_intermediate_ca \
-    -days 3650 -notext -md sha256 -passin pass:yyyy \
+    -days 3650 -notext -md sha256 \
     -in ${INTERMEDIATE_CA_DIR}/csr/intermediate_ca.csr.pem \
     -out ${INTERMEDIATE_CA_DIR}/certs/intermediate_ca.cert.pem
 chmod 444 ${INTERMEDIATE_CA_DIR}/certs/intermediate_ca.cert.pem
@@ -94,11 +93,11 @@ chmod 444 ${INTERMEDIATE_CA_DIR}/certs/ca-chain.cert.pem
 # server certificate
 cp msg_server.cnf ${INTERMEDIATE_CA_DIR}/msg_server.cnf
 new_step "Generate key pair for the server"
-openssl genrsa -aes256 -passout pass:yyyy -out ${INTERMEDIATE_CA_DIR}/private/msg_server.key.pem 2048
+openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/msg_server.key.pem 2048
 chmod 400 ${INTERMEDIATE_CA_DIR}/private/msg_server.key.pem
 new_step "Generate a server CSR"
 openssl req -config ${INTERMEDIATE_CA_DIR}/msg_server.cnf \
-    -new -sha256 -passin pass:yyyy \
+    -new -sha256 \
     -key ${INTERMEDIATE_CA_DIR}/private/msg_server.key.pem \
     -out ${INTERMEDIATE_CA_DIR}/csr/msg_server.csr.pem
 
@@ -107,7 +106,7 @@ openssl req -text -noout -in ${INTERMEDIATE_CA_DIR}/csr/msg_server.csr.pem
 
 new_step "The intermediate ca gives the server a signed certificate based on its CSR"
 openssl ca -config ${INTERMEDIATE_CA_DIR}/intermediate_ca.cnf -extensions server_cert \
-    -days 375 -notext -md sha256 -passin pass:yyyy \
+    -days 375 -notext -md sha256 \
     -in ${INTERMEDIATE_CA_DIR}/csr/msg_server.csr.pem \
     -out ${INTERMEDIATE_CA_DIR}/certs/msg_server.cert.pem
 chmod 444 ${INTERMEDIATE_CA_DIR}/certs/msg_server.cert.pem
@@ -121,16 +120,16 @@ openssl verify -CAfile ${INTERMEDIATE_CA_DIR}/certs/ca-chain.cert.pem \
 # client certificate
 cp client.cnf ${INTERMEDIATE_CA_DIR}/client.cnf
 new_step "Generate key pair for the client"
-openssl genrsa -aes256 -passout pass:yyyy -out ${INTERMEDIATE_CA_DIR}/private/client.key.pem 2048
+openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/client.key.pem 2048
 chmod 400 ${INTERMEDIATE_CA_DIR}/private/client.key.pem
 new_step "Generate a client CSR"
 openssl req -config ${INTERMEDIATE_CA_DIR}/client.cnf \
-    -new -sha256 -passin pass:yyyy \
+    -new -sha256 \
     -key ${INTERMEDIATE_CA_DIR}/private/client.key.pem \
     -out ${INTERMEDIATE_CA_DIR}/csr/client.csr.pem
 new_step "The intermediate ca gives the client a signed certificate based on its CSR"
 openssl ca -config ${INTERMEDIATE_CA_DIR}/intermediate_ca.cnf -extensions usr_cert \
-    -days 375 -notext -md sha256 -passin pass:yyyy \
+    -days 375 -notext -md sha256 \
     -in ${INTERMEDIATE_CA_DIR}/csr/client.csr.pem \
     -out ${INTERMEDIATE_CA_DIR}/certs/client.cert.pem
 chmod 444 ${INTERMEDIATE_CA_DIR}/certs/client.cert.pem
@@ -145,16 +144,16 @@ openssl verify -CAfile ${INTERMEDIATE_CA_DIR}/certs/ca-chain.cert.pem \
 # a certificate suitable for others to use when encrypting files to you
 cp encryptor.cnf ${INTERMEDIATE_CA_DIR}/encryptor.cnf
 new_step "Generate an encryptor certificate"
-openssl genrsa -aes256 -passout pass:yyyy -out ${INTERMEDIATE_CA_DIR}/private/encryptor.key.pem 2048
+openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/encryptor.key.pem 2048
 chmod 400 ${INTERMEDIATE_CA_DIR}/private/encryptor.key.pem
 new_step "Generate a encryptor CSR"
 openssl req -config ${INTERMEDIATE_CA_DIR}/encryptor.cnf \
-    -new -sha256 -passin pass:yyyy \
+    -new -sha256 \
     -key ${INTERMEDIATE_CA_DIR}/private/encryptor.key.pem \
     -out ${INTERMEDIATE_CA_DIR}/csr/encryptor.csr.pem
 new_step "The intermediate ca gives the encryptor a signed certificate based on its CSR"
 openssl ca -config ${INTERMEDIATE_CA_DIR}/intermediate_ca.cnf -extensions encryptor_cert \
-    -days 375 -notext -md sha256 -passin pass:yyyy \
+    -days 375 -notext -md sha256 \
     -in ${INTERMEDIATE_CA_DIR}/csr/encryptor.csr.pem \
     -out ${INTERMEDIATE_CA_DIR}/certs/encryptor.cert.pem
 chmod 444 ${INTERMEDIATE_CA_DIR}/certs/encryptor.cert.pem
@@ -168,16 +167,16 @@ openssl verify -CAfile ${INTERMEDIATE_CA_DIR}/certs/ca-chain.cert.pem \
 # a certificate suitable for signing files, including encrypted files
 cp signer.cnf ${INTERMEDIATE_CA_DIR}/signer.cnf
 new_step "Generate an signer certificate"
-openssl genrsa -aes256 -passout pass:yyyy -out ${INTERMEDIATE_CA_DIR}/private/signer.key.pem 2048
+openssl genrsa -out ${INTERMEDIATE_CA_DIR}/private/signer.key.pem 2048
 chmod 400 ${INTERMEDIATE_CA_DIR}/private/signer.key.pem
 new_step "Generate a signer CSR"
 openssl req -config ${INTERMEDIATE_CA_DIR}/signer.cnf \
-    -new -sha256 -passin pass:yyyy \
+    -new -sha256 \
     -key ${INTERMEDIATE_CA_DIR}/private/signer.key.pem \
     -out ${INTERMEDIATE_CA_DIR}/csr/signer.csr.pem
 new_step "The intermediate ca gives the signer a signed certificate based on its CSR"
 openssl ca -config ${INTERMEDIATE_CA_DIR}/intermediate_ca.cnf -extensions signer_cert \
-    -days 375 -notext -md sha256 -passin pass:yyyy \
+    -days 375 -notext -md sha256 \
     -in ${INTERMEDIATE_CA_DIR}/csr/signer.csr.pem \
     -out ${INTERMEDIATE_CA_DIR}/certs/signer.cert.pem
 chmod 444 ${INTERMEDIATE_CA_DIR}/certs/signer.cert.pem
