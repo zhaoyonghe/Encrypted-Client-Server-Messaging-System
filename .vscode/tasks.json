@@ -8,12 +8,13 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}.out",
+                "${fileDirname}/msg_server_sandbox/${fileBasenameNoExtension}.out",
                 "-lssl",
-                "-lcrypto"
+                "-lcrypto",
+                "-lcrypt"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/msg_server_sandbox"
             },
             "problemMatcher": [
                 "$gcc"

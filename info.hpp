@@ -15,13 +15,15 @@ enum Action {
 // Represent info sent by the client to the server.
 class Info {
 public:
-    const static int FIELD_NUM = 4;
+    const static int ENCODED_FIELD_NUM = 4;
     Action action;
     std::string username;
     std::string password;
     std::string new_password;
     std::string csr;
     std::string cert_path;
+    std::string receipient;
+    std::string encrypted_signed_message;
 
     Info() = default;
 
@@ -61,7 +63,7 @@ public:
 
         printf("%d %d %d %d %zu\n", positions[0], positions[1], positions[2], positions[3], positions.size());
 
-        if (positions.size() != FIELD_NUM) {
+        if (positions.size() != ENCODED_FIELD_NUM) {
             return false;
         }
 
@@ -79,7 +81,7 @@ private:
         while (const char* end = strstr(start, ",")) {
             positions.push_back(std::stoi(std::string(start, end)));
             start = end + 1;
-            if (positions.size() > FIELD_NUM) {
+            if (positions.size() > ENCODED_FIELD_NUM) {
                 // too many fields
                 return positions;
             }

@@ -16,7 +16,7 @@
 #include "my.hpp"
 
 int client_send(Info& info) {
-    std::string address = "www.msg_server.com";
+    std::string address = "www.mg_server.com";
     char msg_header[50];
     sprintf(msg_header, "POST /%d HTTP/1.1", info.action);
 
@@ -59,7 +59,16 @@ int client_send(Info& info) {
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
-    my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+    if (info.action == getcert || info.action == changepw) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+    } else if (info.action == sendmsg) {
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.receipient);
+    } else if (info.action == recvmsg) {
+        // TODO
+    } else {
+        // TODO
+    }
+    
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
     return 1;

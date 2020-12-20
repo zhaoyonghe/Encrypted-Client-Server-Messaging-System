@@ -16,6 +16,7 @@
 #include "openssl-sign-by-ca-master/openssl1.1/main.c"
 #include <sys/stat.h>
 #include <ctype.h>
+#include <exception>      
 
 #include "info.hpp"
 #include "my.hpp"
@@ -168,6 +169,7 @@ int main() {
     while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get())) {
         conn_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
         try {
+            std::cout << "fucking0" << std::endl;
             std::string request = my::receive_http_message(conn_bio.get());
             printf("Got request:\n");
             printf("%s\n", request.c_str());
@@ -211,7 +213,8 @@ int main() {
 
             my::send_http_response(conn_bio.get(), response);
         } catch (const std::exception& ex) {
-            printf("Worker exited with exception:\n%s\n", ex.what());
+            const char* a = ex.what();
+            printf("Worker exited with exception:\n%s\n", a);
         }
     }
     printf("\nClean exit!\n");

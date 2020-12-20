@@ -29,13 +29,13 @@ getcert:
 	g++ -o getcert.out getcert.cpp client.cpp -lssl -lcrypto
 
 changepw:
-	g++ -o changepw.out changepw.cpp -lssl -lcrypto
+	g++ -o changepw.out changepw.cpp client.cpp -lssl -lcrypto
 
 sendmsg:
-	g++ -o sendmsg.out sendmsg.cpp -lssl -lcrypto
+	g++ -o sendmsg.out sendmsg.cpp client.cpp -lssl -lcrypto
 
 recvmsg:
-	g++ -o recvmsg.out recvmsg.cpp -lssl -lcrypto
+	g++ -o recvmsg.out recvmsg.cpp client.cpp -lssl -lcrypto
 
 clean:
 	rm -rf *.out

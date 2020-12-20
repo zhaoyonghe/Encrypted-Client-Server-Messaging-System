@@ -1,7 +1,6 @@
-#include "client.cpp"
+#include "client.hpp"
 
-int main()
-{
+int main() {
     Info info;
     info.action = changepw;
 
