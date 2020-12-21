@@ -77,44 +77,6 @@ static void print_bytes(uint8_t *data, size_t size);
 // 	return 0;
 // }
 
-int get_common_name_from_cert(const X509 *crt, std::string &out)
-{
-	X509_NAME *name = NULL;
-	X509_NAME_ENTRY *entry = NULL;
-
-	if (crt != NULL)
-	{
-		name = X509_get_subject_name(crt);
-		if (name != NULL)
-		{
-			int lastpos = -1;
-			lastpos = X509_NAME_get_index_by_NID(name, NID_commonName, lastpos);
-			if (lastpos != -1)
-			{
-				entry = X509_NAME_get_entry(name, lastpos);
-				ASN1_STRING *asn = X509_NAME_ENTRY_get_data(entry);
-				unsigned char *common_name;
-				ASN1_STRING_to_UTF8(&common_name, asn);
-				out = std::string(reinterpret_cast<char const *>(common_name));
-			}
-			else
-			{
-				return 1;
-			}
-		}
-		else
-		{
-			return 1;
-		}
-	}
-	else
-	{
-		return 1;
-	}
-
-	return 0;
-}
-
 void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
 {
 	/* Convert signed certificate to PEM format. */
@@ -151,6 +113,11 @@ void csr_to_pem(X509_REQ *req, uint8_t **req_bytes, size_t *req_size)
 int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_PKEY **key, X509 **crt)
 {
 	/* Generate the private key and corresponding CSR. */
+	//X509_REQ *req = NULL;
+	// if (!generate_key_csr(key, &req)) {
+	// 	fprintf(stderr, "Failed to generate key and/or CSR!\n");
+	// 	return 0;
+	// }
 	EVP_PKEY *req_pubkey;
 
 	/* Sign with the CA. */
@@ -177,48 +144,6 @@ int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_
 	req_pubkey = X509_REQ_get_pubkey(req);
 	X509_set_pubkey(*crt, req_pubkey);
 	EVP_PKEY_free(req_pubkey);
-
-	// Set extensions of the certificate
-	X509_EXTENSION *ex;
-	X509V3_CTX ctx;
-	X509V3_set_ctx_nodb(&ctx);
-	X509V3_set_ctx(&ctx, *crt, *crt, NULL, NULL, 0);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_basic_constraints, (char *)"CA:FALSE")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_netscape_cert_type, (char *)"client, email")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_netscape_comment, (char *)"OpenSSL Generated Client Certificate")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_basic_constraints, (char *)"CA:FALSE")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_key_identifier, (char *)"hash")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_authority_key_identifier, (char *)"keyid,issuer")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_key_usage, (char *)"critical, nonRepudiation, digitalSignature, keyEncipherment")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_ext_key_usage, (char *)"clientAuth, emailProtection")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
-
-	if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_alt_name, (char *)"IP:2.2.2.2")))
-		goto err;
-	X509_add_ext(*crt, ex, -1);
 
 	/* Now perform the actual signing with the CA. */
 	if (X509_sign(*crt, ca_key, EVP_sha256()) == 0)

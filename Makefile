@@ -29,6 +29,8 @@ server:
 	cp users/hashed_pw/* $(SERVER_SANDBOX_HASHED_PW)
 	cp -r users/users/* $(SERVER_SANDBOX_USERS)
 
+four: getcert changepw sendmsg recvmsg
+
 getcert:
 	g++ -o getcert.out getcert.cpp client.cpp my.cpp -lssl -lcrypto
 
@@ -39,7 +41,7 @@ sendmsg:
 	g++ -o sendmsg.out sendmsg.cpp client.cpp cms.cpp my.cpp -lssl -lcrypto
 
 recvmsg:
-	g++ -o recvmsg.out recvmsg.cpp client.cpp -lssl -lcrypto
+	g++ -o recvmsg.out recvmsg.cpp client.cpp cms.cpp my.cpp -lssl -lcrypto
 
 cms:
 	g++ -o cms.out cms.cpp -lssl -lcrypto

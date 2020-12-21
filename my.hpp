@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <fstream>
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -90,6 +92,8 @@ namespace my {
     void verify_the_certificate(SSL* ssl, const std::string& expected_hostname);
 
     bool is_valid_safe_username(const std::string& str);
+
+    std::string load_file_to_string(const std::string& filename);
 
 } // namespace my
 
