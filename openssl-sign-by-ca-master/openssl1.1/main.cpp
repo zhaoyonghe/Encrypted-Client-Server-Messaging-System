@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string>
+#include <sstream>
 
 #include <openssl/err.h>
 #include <openssl/conf.h>

@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "client.hpp"
-#include "openssl-sign-by-ca-master/openssl1.1/main.c"
+#include "openssl-sign-by-ca-master/openssl1.1/main.cpp"
 
 int main(int argc, char *argv[])
 {

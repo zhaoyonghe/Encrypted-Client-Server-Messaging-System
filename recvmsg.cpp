@@ -20,9 +20,15 @@ int main(int argc, char* argv[]) {
 
     printf("[%s] [%s]\n", code.c_str(), body.c_str());
 
+    int div_idx = body.find("****div****");
+    std::string enc_sign_msg = body.substr(0, div_idx);
+    std::string sender_cert = body.substr(div_idx + 11);
+
+    printf("[%s] [%s]\n", enc_sign_msg.c_str(), sender_cert.c_str());
+
     my::StringBIO enc_msg;
-    if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, body, NULL)) {
-    //if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, body, enc_msg.bio())) {
+    //if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, enc_sign_msg, NULL)) {
+    if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, enc_sign_msg, enc_msg.bio())) {
         exit(1);
     }
     if (cms_dec(info.cert_path, private_key_path, std::move(enc_msg).str(), true)) {

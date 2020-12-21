@@ -24,7 +24,7 @@
 
 #include "info.hpp"
 #include "my.hpp"
-#include "openssl-sign-by-ca-master/openssl1.1/main.c"
+#include "openssl-sign-by-ca-master/openssl1.1/main.cpp"
 
 Action char_to_action(char c)
 {
@@ -66,10 +66,10 @@ Action get_action_from_request(std::string &request)
 
 bool verify_password(std::string username, std::string password)
 {
-    std::string hased_pw_path = "hashed_pw/" + username;
+    std::string hashed_pw_path = "hashed_pw/" + username;
     struct stat buffer;
 
-    if (stat(hased_pw_path.c_str(), &buffer) != 0)
+    if (stat(hashed_pw_path.c_str(), &buffer) != 0)
     {
         // This user does not exist.
         return false;
@@ -81,12 +81,9 @@ bool verify_password(std::string username, std::string password)
         return false;
     }
 
-    std::ifstream t(hased_pw_path);
-    std::stringstream stream;
-    stream << t.rdbuf();
-    t.close();
+    std::string hashed_pw = my::load_file_to_string(hashed_pw_path);
 
-    return strcmp(stream.str().c_str(), crypt(password.c_str(), stream.str().c_str())) == 0;
+    return strcmp(hashed_pw.c_str(), crypt(password.c_str(), hashed_pw.c_str())) == 0;
 }
 
 int update_password(std::string username, std::string new_password)
@@ -231,29 +228,29 @@ std::string handle_getcert(std::string &response, std::string &ca_cert_path,
     return "200";
 }
 
-std::string handle_sendmsg_get_recipient_cert(std::string &response, const std::string &recipient)
-{
-    if (!my::is_valid_safe_username(recipient))
+std::string load_cert(std::string &response, const std::string &username) {
+    if (!my::is_valid_safe_username(username))
     {
         response = "The user name is not valid and safe.";
         return "406";
     }
 
     struct stat buffer;
-    std::string recipient_cert_path = "./certs/users/" + recipient + "_certificate.pem";
-    if (stat(recipient_cert_path.c_str(), &buffer) != 0)
+    std::string username_cert_path = "./certs/users/" + username + "_certificate.pem";
+    if (stat(username_cert_path.c_str(), &buffer) != 0)
     {
         // This user does not exist.
-        response = "No such user or this user does not have a certificate.";
+        response = "Try to load an non-exist certificate: no such user or this user does not have a certificate.";
         return "400";
     }
 
-    std::ifstream t(recipient_cert_path);
-    std::stringstream stream;
-    stream << t.rdbuf();
-
-    response = stream.str();
+    response = my::load_file_to_string(username_cert_path);
     return "200";
+}
+
+std::string handle_sendmsg_get_recipient_cert(std::string &response, const std::string &recipient)
+{
+    return load_cert(response, recipient);
 }
 
 std::string get_cur_timestamp()
@@ -266,7 +263,7 @@ std::string get_cur_timestamp()
 
 std::string handle_sendmsg_send_encrypted_signed_message(std::string &response, Info &info)
 {
-    if (!my::is_valid_safe_username(info.recipient))
+    if (!my::is_valid_safe_username(info.recipient) || !my::is_valid_safe_username(info.username))
     {
         response = "The user name is not valid and safe.";
         return "406";
@@ -277,11 +274,13 @@ std::string handle_sendmsg_send_encrypted_signed_message(std::string &response, 
     if (stat(recipient_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR))
     {
         // This user does not exist (no such directory).
+        // not (the recipient path exist and it is a directory).
         response = "No such user or this user does not have a certificate.";
         return "400";
     }
+    // the recipient path exist and it is a directory
 
-    std::ofstream certificate_pem_file("./users/" + info.recipient + "/" + get_cur_timestamp());
+    std::ofstream certificate_pem_file("./users/" + info.recipient + "/" + get_cur_timestamp() + std::string("_") + info.username);
     certificate_pem_file << info.encrypted_signed_message;
     certificate_pem_file.close();
     return "200";
@@ -317,6 +316,9 @@ std::string handle_changepw(std::string &response, std::string &ca_cert_path,
     }
 }
 
+
+
+
 std::string handle_recvmsg(std::string &response, const std::string &username)
 {
     // Check if the mailbox folder exists
@@ -324,14 +326,12 @@ std::string handle_recvmsg(std::string &response, const std::string &username)
     std::string user_path = "./users/" + username;
     if (stat(user_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR))
     {
-        // This user does not exist (no such directory).
-        response = "No such user or this user does not have a certificate.";
+        response = "No such user.";
         return "400";
     }
 
     if (check_mailbox_empty(username))
     {
-        // no unread message
         response = "No unread message.";
         return "400";
     }
@@ -340,18 +340,21 @@ std::string handle_recvmsg(std::string &response, const std::string &username)
     auto oldest_unread_msg_path = get_oldest_unread_msg_path(username);
     if (oldest_unread_msg_path.empty())
     {
-        // no unread message
-        // TODO
-        response = "No unread message.";
+        response = "No unread message>.";
         return "400";
     }
 
-    std::ifstream t(oldest_unread_msg_path);
-    std::stringstream stream;
-    stream << t.rdbuf();
+    // assume oldest_unread_msg_path has valid format here
+    int div_idx = oldest_unread_msg_path.find_last_of('_');
+    auto sender_name = oldest_unread_msg_path.substr(div_idx + 1);
 
-    response = stream.str();
+    response = my::load_file_to_string(oldest_unread_msg_path);
+    std::string sender_cert;
+    load_cert(sender_cert, sender_name);
+    response.append("****div****");
+    response.append(sender_cert);
     // TODO: delete
+    my::delete_file(oldest_unread_msg_path);
     return "200";
 }
 
@@ -410,12 +413,14 @@ int main()
             // Get the certificate used by client and extract common name
             int verify_mode = SSL_get_verify_mode(my::get_ssl(ssl_bio.get()));
             printf("verify_mode: %d\n", verify_mode);
+            std::string peer_common_name;
 
             X509 *peer_cert = SSL_get_peer_certificate(my::get_ssl(ssl_bio.get()));
             if (peer_cert != NULL)
             {
-                std::string peer_common_name;
                 get_common_name_from_cert(peer_cert, peer_common_name);
+                // free the peer cert immediately
+                X509_free(peer_cert);
                 printf("peer certificate common name: %s\n", peer_common_name.c_str());
             }
             else
@@ -471,35 +476,29 @@ int main()
             else
             {
                 // When the action is neither getcert nor changepw, check if the client sends a certificate
-                if (peer_cert == NULL)
+                // peer_cert == NULL <==> peer_common_name.empty()
+                if (peer_common_name.empty())
                 {
                     http_code = "401";
                     response = "No certificate sent\n";
                 }
                 else if (action == sendmsg_get_recipient_cert)
                 {
-
-                    action_string = "sendmsg_get_recipient_cert";
-                    char *end_of_headers = strstr(&request[0], "\r\n\r\n");
-                    std::string recipient = std::string(end_of_headers + 4, &request[request.size()]);
-                    printf("recipient:[%s]\n", recipient.c_str());
-                    http_code = handle_sendmsg_get_recipient_cert(response, recipient);
+                    printf("recipient:[%s]\n", body.c_str());
+                    http_code = handle_sendmsg_get_recipient_cert(response, body);
                 }
                 else if (action == sendmsg_send_encrypted_signed_message)
                 {
                     action_string = "sendmsg_send_encrypted_signed_message";
                     Info info;
-                    char *end_of_headers = strstr(&request[0], "\r\n\r\n");
-                    std::string body = std::string(end_of_headers + 4, &request[request.size()]);
-                    printf("%s\n", body.c_str());
-                    printf("%d--\n", info.from_string(body));
-                    info.print_info();
+                    info.from_string(body);
+                    info.username = peer_common_name;
                     http_code = handle_sendmsg_send_encrypted_signed_message(response, info);
                 }
                 else if (action == recvmsg)
                 {
                     action_string = "recvmsg";
-                    handle_recvmsg(response, "overrich");
+                    http_code = handle_recvmsg(response, peer_common_name);
                 }
                 else
                 {
@@ -510,9 +509,6 @@ int main()
 
             printf("Got action: %s\n", action_string.c_str());
             my::send_http_response(ssl_bio.get(), http_code, response);
-
-            // Clean up
-            X509_free(peer_cert);
         }
         catch (const std::exception &ex)
         {

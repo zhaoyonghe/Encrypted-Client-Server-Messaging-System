@@ -174,4 +174,8 @@ namespace my {
         return stream.str();
     }
 
+    void delete_file(const std::string& filename) {
+        
+    }
+
 } // namespace my
