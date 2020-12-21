@@ -46,6 +46,12 @@ recvmsg:
 cms:
 	g++ -o cms.out cms.cpp -lssl -lcrypto
 
+sandbox_build:
+	docker build -t yz3645/sandbox:0.1 .
+
+sandbox_run:
+	docker run -p 4399:4399 --rm -ti yz3645/sandbox:0.1
+
 clean:
 	rm -rf *.out
 	rm -rf $(SERVER_SANDBOX)
