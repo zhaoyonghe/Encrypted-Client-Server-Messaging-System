@@ -178,6 +178,36 @@ int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_
 	X509_set_pubkey(*crt, req_pubkey);
 	EVP_PKEY_free(req_pubkey);
 
+	// Set extensions of the certificate
+	X509_EXTENSION *ex;
+	X509V3_CTX ctx;
+	X509V3_set_ctx_nodb(&ctx);
+	X509V3_set_ctx(&ctx, *crt, *crt, NULL, NULL, 0);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL,  &ctx, NID_basic_constraints, (char*)"CA:FALSE")))
+    	goto err;
+    X509_add_ext(*crt, ex, -1);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_key_identifier, (char*)"hash")))
+    	goto err;
+    X509_add_ext(*crt, ex, -1);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_authority_key_identifier, (char*)"keyid,issuer")))
+    	goto err;
+    X509_add_ext(*crt, ex, -1);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL,  &ctx, NID_key_usage, (char*)"critical, nonRepudiation, digitalSignature, keyEncipherment")))
+      goto err;
+    X509_add_ext(*crt, ex, -1);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL,  &ctx, NID_ext_key_usage, (char*)"clientAuth, emailProtection")))
+      goto err;
+    X509_add_ext(*crt, ex, -1);
+
+	if(!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_alt_name, (char*)"IP:2.2.2.2")))
+    	goto err;
+    X509_add_ext(*crt, ex, -1);
+
 	/* Now perform the actual signing with the CA. */
 	if (X509_sign(*crt, ca_key, EVP_sha256()) == 0)
 		goto err;
