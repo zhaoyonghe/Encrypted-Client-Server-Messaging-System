@@ -5,3 +5,4 @@ my_certificate.pem
 msg_server_sandbox/certs/users/*.pem
 *.pem
 msg_server_sandbox
+encrypted_msg.txt

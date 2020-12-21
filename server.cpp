@@ -326,9 +326,21 @@ int main()
         auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
         try
         {
+
             std::string request = my::receive_http_message(ssl_bio.get());
             printf("Got request:\n");
             printf("%s\n", request.c_str());
+
+            // Get the certificate used by client and extract common name
+            X509 *peer_cert = SSL_get_peer_certificate(my::get_ssl(ssl_bio.get()));
+            if (peer_cert != NULL)  {
+                std::string peer_common_name;
+                get_common_name_from_cert(peer_cert, peer_common_name);
+                printf("peer certificate common name: %s\n", peer_common_name.c_str());
+                X509_free(peer_cert);
+            }else{
+                printf("peer certificate common name: %s\n", "no certificate");
+            }
 
             // Parse request here
             // Get the action type
