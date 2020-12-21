@@ -315,6 +315,22 @@ std::string handle_recvmsg(std::string& response, const std::string& username) {
     return "200";
 }
 
+// TODO: investigate real error here
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+ {
+    char    buf[256];
+    X509   *err_cert;
+    int     err, depth;
+    SSL    *ssl;
+    std::string peer_common_name;
+
+    err_cert = X509_STORE_CTX_get_current_cert(ctx);
+
+    err = X509_STORE_CTX_get_error(ctx);
+    get_common_name_from_cert(err_cert, peer_common_name);
+    printf("peer certificate common name: %s, error: %d\n", peer_common_name.c_str(), err);
+ }
+
 int main() {
     std::string ca_cert_path = "./certs/intermediate_ca.cert.pem";
     std::string ca_key_path = "./private/intermediate_ca.key.pem";
@@ -348,6 +364,8 @@ int main() {
     };
     signal(SIGINT, [](int) { shutdown_the_socket(); });
 
+    SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, verify_callback);
+
     printf("Server running\n");
 
     while (auto conn_bio = my::accept_new_tcp_connection(accept_bio.get())) {
@@ -359,6 +377,9 @@ int main() {
             printf("%s\n", request.c_str());
 
             // Get the certificate used by client and extract common name
+            int verify_mode = SSL_get_verify_mode(my::get_ssl(ssl_bio.get()));
+            printf("verify_mode: %d\n", verify_mode);
+
             X509 *peer_cert = SSL_get_peer_certificate(my::get_ssl(ssl_bio.get()));
             if (peer_cert != NULL)  {
                 std::string peer_common_name;
