@@ -94,6 +94,7 @@ namespace my {
     bool is_valid_safe_username(const std::string& str);
 
     std::string load_file_to_string(const std::string& filename);
+    void delete_file(const std::string& filename);
 
 } // namespace my
 

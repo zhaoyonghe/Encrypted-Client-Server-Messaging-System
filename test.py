@@ -26,15 +26,28 @@ def get_random_cmd(li, arg_num_left=2, arg_num_right=5):
     return " ".join(li)
 
 if __name__ == "__main__":
-    step("Users cannot getcert with wrong username/password pair.")
+    step("User cannot getcert with wrong username/password pair.")
     for _ in range(10):
         assert run(get_random_cmd(["./getcert.out"])).returncode == 1
     for _ in range(10):
         assert run("./getcert.out addleness " + get_radom_string()).returncode == 1
     
-    step("Users can getcert with correct username/password pair.")
+    step("User can getcert with correct username/password pair.")
     assert run("./getcert.out addleness Cardin_pwns").returncode == 0
     assert run("./getcert.out overrich Freemasonry_bruskest").returncode == 0
     assert run("./getcert.out wamara stirrer_hewer's").returncode == 0
     
-    
+    step("User can changepw with correct username/passsword pair.")
+    assert run("./changepw.out addleness Cardin_pwns aaa").returncode == 0
+    assert run("./changepw.out overrich Freemasonry_bruskest ooo").returncode == 0
+    assert run("./changepw.out wamara stirrer_hewer's www").returncode == 0
+
+    step("User can login with new password.")
+    assert run("./getcert.out addleness aaa").returncode == 0
+    assert run("./getcert.out overrich ooo").returncode == 0
+    assert run("./getcert.out wamara www").returncode == 0
+
+    step("Users cannot login with previous password.")
+    assert run("./getcert.out addleness Cardin_pwns").returncode == 1
+    assert run("./getcert.out overrich Freemasonry_bruskest").returncode == 1
+    assert run("./getcert.out wamara stirrer_hewer's").returncode == 1
