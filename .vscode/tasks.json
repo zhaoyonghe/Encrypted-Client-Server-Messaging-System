@@ -44,6 +44,7 @@
             "args": [
                 "${file}",
                 "client.cpp",
+                "my.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.out",
                 "-lssl",

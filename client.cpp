@@ -32,7 +32,7 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
 
     // load self certificate, private key and CA certificate (to verify the identity of the connection peer)
     // TODO: add peer verification for sendmsg
-    if (info.action == recvmsg) {
+    if (info.action != getcert && info.action != changepw) {
         if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), info.cert_path.c_str(), SSL_FILETYPE_PEM)) {
             my::print_errors_and_exit("Error loading client certificate");
         }
