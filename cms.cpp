@@ -8,8 +8,8 @@
 
 #include "cms.hpp"
 
-// encrypt the message in msg_path and write to encrypted_msg.txt
-int cms_enc(std::string& recipient_cert, std::string& msg_path) {
+// encrypt the message in msg_path and write to enc_msg.txt
+int cms_enc(const std::string& recipient_cert, const std::string& msg_path, BIO* enc_msg) {
     BIO* in = NULL, * out = NULL, * tbio = NULL;
     X509* rcert = NULL;
     STACK_OF(X509)* recips = NULL;
@@ -56,16 +56,18 @@ int cms_enc(std::string& recipient_cert, std::string& msg_path) {
 
     /* encrypt content */
     cms = CMS_encrypt(recips, in, EVP_des_ede3_cbc(), flags);
-
     if (!cms)
         goto err;
 
-    out = BIO_new_file("encrypted_msg.txt", "w");
-    if (!out)
-        goto err;
+    if (enc_msg == NULL) {
+        out = BIO_new_file("./tmp/enc_msg.txt", "w");
+        if (!out)
+            goto err;
+        enc_msg = out;
+    }
 
     /* Write out S/MIME message */
-    if (!SMIME_write_CMS(out, cms, in, flags))
+    if (!SMIME_write_CMS(enc_msg, cms, in, flags))
         goto err;
 
     ret = 0;
@@ -86,8 +88,8 @@ err:
     return ret;
 }
 
-int cms_dec(std::string& cert_path, std::string& pri_key_path, BIO* encrypted_msg) {
-    BIO* out = NULL, * cbio = NULL, * kbio = NULL;
+int cms_dec(const std::string& cert_path, const std::string& pri_key_path, const std::string& enc_msg, const bool display) {
+    BIO *in = NULL, *out = NULL, * cbio = NULL, * kbio = NULL;
     X509* mcert = NULL;
     EVP_PKEY* mkey = NULL;
     CMS_ContentInfo* cms = NULL;
@@ -111,11 +113,22 @@ int cms_dec(std::string& cert_path, std::string& pri_key_path, BIO* encrypted_ms
         goto err;
 
     /* Parse message */
-    cms = SMIME_read_CMS(encrypted_msg, NULL);
+    if (enc_msg.empty()) {
+        in = BIO_new_file("./tmp/smver.txt", "r");
+    } else {
+        in = BIO_new_mem_buf(enc_msg.c_str(), enc_msg.length());
+    }
+    
+    cms = SMIME_read_CMS(in, NULL);
     if (!cms)
         goto err;
 
-    out = BIO_new_file("decout.txt", "w");
+    if (display) {
+        out = BIO_new_fd(fileno(stdout), BIO_NOCLOSE);
+    } else {
+        out = BIO_new_file("./tmp/decout.txt", "w");
+    }
+    
     if (!out)
         goto err;
 
@@ -135,14 +148,14 @@ err:
     CMS_ContentInfo_free(cms);
     X509_free(mcert);
     EVP_PKEY_free(mkey);
-    //BIO_free(in);
+    BIO_free(in);
     BIO_free(out);
     BIO_free(cbio);
     BIO_free(kbio);
     return ret;
 }
 
-int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
+int cms_sign(const std::string& cert_path, const std::string& pri_key_path, const std::string& enc_msg, BIO* enc_sign_msg) {
     BIO* in = NULL, * out = NULL, * cbio = NULL, * kbio = NULL;
     X509* mcert = NULL;
     EVP_PKEY* mkey = NULL;
@@ -174,7 +187,11 @@ int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
         goto err;
 
     /* Open content being signed */
-    in = BIO_new_file("encrypted_msg.txt", "r");
+    if (enc_msg.empty()) {
+        in = BIO_new_file("./tmp/enc_msg.txt", "r");
+    } else {
+        in = BIO_new_mem_buf(enc_msg.c_str(), enc_msg.length());
+    }
 
     if (!in)
         goto err;
@@ -185,20 +202,21 @@ int cms_sign(std::string& cert_path, std::string& pri_key_path, BIO* msg) {
     if (!cms)
         goto err;
 
-
-
     if (!(flags & CMS_STREAM))
         BIO_reset(in);
 
     /* Write out S/MIME message */
-    if (msg == NULL) {
-        out = BIO_new_file("smout.txt", "w");
+    if (enc_sign_msg == NULL) {
+        out = BIO_new_file("./tmp/smout.txt", "w");
         if (!out)
             goto err;
-        msg = out;
+        enc_sign_msg = out;
     }
 
-    if (!SMIME_write_CMS(msg, cms, in, flags))
+    //out = BIO_new_file("./tmp/cao.txt", "w");
+    //out = BIO_new_fd(fileno(stdout), BIO_NOCLOSE);
+
+    if (!SMIME_write_CMS(enc_sign_msg, cms, in, flags))
         goto err;
 
     ret = 0;
@@ -220,7 +238,7 @@ err:
     return ret;
 }
 
-int cms_verify(std::string& signer_cert, std::string& ca_chain_path, int chain_depth) {
+int cms_verify(const std::string& signer_cert, const std::string& ca_chain_path, int chain_depth, const std::string& enc_sign_msg, BIO* enc_msg) {
     BIO* in = NULL, * out = NULL, * sbio = NULL, * tbio = NULL, * cont = NULL;
     X509_STORE* st = NULL;
     X509* cacert = NULL;
@@ -264,24 +282,29 @@ int cms_verify(std::string& signer_cert, std::string& ca_chain_path, int chain_d
     }
 
     /* Open message being verified */
-
-    in = BIO_new_file("smout.txt", "r");
+    if (enc_sign_msg.empty()) {
+        in = BIO_new_file("./tmp/smout.txt", "r");
+    } else {
+        in = BIO_new_mem_buf(enc_sign_msg.c_str(), enc_sign_msg.length());
+    }
 
     if (!in)
         goto err;
 
     /* parse message */
     cms = SMIME_read_CMS(in, &cont);
-
     if (!cms)
         goto err;
 
     /* File to output verified content to */
-    out = BIO_new_file("smver.txt", "w");
-    if (!out)
-        goto err;
+    if (enc_msg == NULL) {
+        out = BIO_new_file("./tmp/smver.txt", "w");
+        if (!out)
+            goto err;
+        enc_msg = out;
+    }
 
-    if (!CMS_verify(cms, signers, st, cont, out, 0)) {
+    if (!CMS_verify(cms, NULL, st, cont, enc_msg, 0)) {
         fprintf(stderr, "Verification Failure\n");
         goto err;
     }
@@ -298,6 +321,7 @@ err:
     }
 
     CMS_ContentInfo_free(cms);
+    // free all?
     X509_free(cacert);
     BIO_free(in);
     BIO_free(out);
@@ -308,7 +332,7 @@ err:
 
 
 // int main() {
-//     std::ifstream r("./certs/container/intermediate_ca/certs/msg_server.cert.pem");
+//     std::ifstream r("overrich_certificate.pem");
 //     std::stringstream rbuffer;
 //     rbuffer << r.rdbuf();
 //     std::string recipient_cert = rbuffer.str();
@@ -325,9 +349,10 @@ err:
 
 //     std::string ca_chain_path = "./certs/container/intermediate_ca/certs/ca-chain.cert.pem";
 
-//     cms_enc(recipient_cert, msg_path);
-//     cms_sign(my_cert_path, my_priv_key_path);
-//     cms_verify(my_cert, ca_chain_path);
+//     //cms_enc(recipient_cert, "play.cpp", NULL);
+//     //cms_sign("addleness_certificate.pem", "addleness_private_key.pem", "", NULL);
+//     cms_verify("", ca_chain_path, 2, "", NULL);
+//     cms_dec("overrich_certificate.pem", "overrich_private_key.pem", "", true);
 
 // }
 
