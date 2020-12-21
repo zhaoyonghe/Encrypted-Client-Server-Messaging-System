@@ -36,6 +36,8 @@ public:
         printf("password: [%s]\n", password.c_str());
         printf("new_password: [%s]\n", new_password.c_str());
         printf("csr: [%s]\n", csr.c_str());
+        printf("recipient: [%s]\n", recipient.c_str());
+        printf("encrypted_signed_message: [%s]\n", encrypted_signed_message.c_str());
         printf("cert_path: [%s]\n", cert_path.c_str());
     }
 

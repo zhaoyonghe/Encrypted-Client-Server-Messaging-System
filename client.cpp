@@ -70,7 +70,7 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
     } else if (info.action == sendmsg_send_encrypted_signed_message) {
         my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
     } else if (info.action == recvmsg) {
-        // TODO
+        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", "");
     } else {
         return 1;
     }

@@ -40,11 +40,15 @@ int main(int argc, char* argv[]) {
         // Encrypt, sign and send the message
         // =============================================
         info.action = sendmsg_send_encrypted_signed_message;
-        my::StringBIO msg_bio;
-        if (cms_enc(body, msg_path) || cms_sign(info.cert_path, priv_key_path, msg_bio.bio())) {
+        my::StringBIO enc_msg_bio;
+        if (cms_enc(body, msg_path, enc_msg_bio.bio())) {
             continue;
         }
-        info.encrypted_signed_message = std::move(msg_bio).str();
+        if (cms_sign(info.cert_path, priv_key_path, std::move(enc_msg_bio).str(), NULL)) {
+            continue;
+        }
+        info.encrypted_signed_message = my::load_file_to_string("./tmp/smout.txt");
+        printf("fucking[%s]\n", info.encrypted_signed_message.c_str());
 
         client_send(info, code, body, priv_key_path);
 
