@@ -106,7 +106,6 @@ int update_password(std::string username, std::string new_password)
     return 0;
 }
 
-// TODO: add real code to this dummy function
 bool check_mailbox_empty(std::string username)
 {
     std::string mailbox_path_string = "./users/" + username;
