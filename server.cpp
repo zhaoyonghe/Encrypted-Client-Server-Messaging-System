@@ -355,22 +355,6 @@ std::string handle_recvmsg(std::string &response, const std::string &username)
     return "200";
 }
 
-// TODO: investigate real error here
-static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{
-    char buf[256];
-    X509 *err_cert;
-    int err, depth;
-    SSL *ssl;
-    std::string peer_common_name;
-
-    err_cert = X509_STORE_CTX_get_current_cert(ctx);
-
-    err = X509_STORE_CTX_get_error(ctx);
-    get_common_name_from_cert(err_cert, peer_common_name);
-    printf("peer certificate common name: %s, error: %d\n", peer_common_name.c_str(), err);
-}
-
 int main()
 {
     std::string ca_cert_path = "./certs/intermediate_ca.cert.pem";
