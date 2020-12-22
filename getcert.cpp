@@ -27,7 +27,12 @@ int main(int argc, char* argv[]) {
     // info.print_info();
 
     std::string code, body;
-    client_send(info, code, body, private_key_path);
+    try {
+        client_send(info, code, body, private_key_path);
+    } catch(...) {
+        fprintf(stderr, "Failed to get response from server. Please check your input and the liveness of the server.\n");
+        exit(1);
+    }
 
     // If get 200 OK, save key and received certificate
     if (code == "200") {

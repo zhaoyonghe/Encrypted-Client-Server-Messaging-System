@@ -16,19 +16,28 @@ int main(int argc, char* argv[]) {
 
     std::string code, body;
 
-    client_send(info, code, body, private_key_path);
+    try {
+        client_send(info, code, body, private_key_path);
+    } catch(...) {
+        fprintf(stderr, "Failed to get response from server. Please check your input and the liveness of the server.\n");
+        exit(1);
+    }
 
     // printf("[%s] [%s]\n", code.c_str(), body.c_str());
-
-    int div_idx = body.find("****div****");
-    std::string enc_sign_msg = body.substr(0, div_idx);
-    std::string signer_cert = body.substr(div_idx + 11);
 
     // printf("(%s) (%s)\n", enc_sign_msg.c_str(), signer_cert.c_str());
     if (code != "200") {
         fprintf(stderr, "Error from server: %s.\n", body.c_str());
         exit(1);
     }
+
+    int div_idx = body.find("****div****");
+    if (div_idx == std::string::npos) {
+        fprintf(stderr, "Invalid server response format.\n");
+        exit(1);
+    }
+    std::string enc_sign_msg = body.substr(0, div_idx);
+    std::string signer_cert = body.substr(div_idx + 11);
 
     my::StringBIO enc_msg;
     //if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, enc_sign_msg, NULL)) {

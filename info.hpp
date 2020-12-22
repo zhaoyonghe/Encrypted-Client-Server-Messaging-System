@@ -66,22 +66,22 @@ public:
         if (divider_pos == std::string::npos) {
             return false;
         }
-        printf("%d!!\n", divider_pos);
 
-        std::vector<int> positions = split_positions(info_string.substr(divider_pos + 1));
+        try {
+            std::vector<int> positions = split_positions(info_string.substr(divider_pos + 1));
+            if (positions.size() != ENCODED_FIELD_NUM) {
+                return false;
+            }
 
-        printf("%d %d %d %d %zu\n", positions[0], positions[1], positions[2], positions[3], positions.size());
-
-        if (positions.size() != ENCODED_FIELD_NUM) {
+            username = info_string.substr(0, positions[0] - 0);
+            password = info_string.substr(positions[0], positions[1] - positions[0]);
+            new_password = info_string.substr(positions[1], positions[2] - positions[1]);
+            csr = info_string.substr(positions[2], positions[3] - positions[2]);
+            recipient = info_string.substr(positions[3], positions[4] - positions[3]);
+            encrypted_signed_message = info_string.substr(positions[4], positions[5] - positions[4]);
+        } catch (...) {
             return false;
         }
-
-        username = info_string.substr(0, positions[0] - 0);
-        password = info_string.substr(positions[0], positions[1] - positions[0]);
-        new_password = info_string.substr(positions[1], positions[2] - positions[1]);
-        csr = info_string.substr(positions[2], positions[3] - positions[2]);
-        recipient = info_string.substr(positions[3], positions[4] - positions[3]);
-        encrypted_signed_message = info_string.substr(positions[4], positions[5] - positions[4]);
 
         return true;
     }

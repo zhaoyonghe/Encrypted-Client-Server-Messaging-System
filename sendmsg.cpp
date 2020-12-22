@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
     Info info;
     info.cert_path = std::string(argv[1]);
-    std::string priv_key_path(argv[2]);
+    std::string private_key_path(argv[2]);
     std::string msg_path(argv[3]);
     for (int i = 4; i < argc; i++) {
         // =============================================
@@ -27,7 +27,12 @@ int main(int argc, char* argv[]) {
         info.action = sendmsg_get_recipient_cert;
         info.recipient = std::string(argv[i]);
         std::string code, body;
-        client_send(info, code, body, priv_key_path);
+        try {
+            client_send(info, code, body, private_key_path);
+        } catch(...) {
+            fprintf(stderr, "Failed to get response from server. Please check your input and the liveness of the server.\n");
+            exit(1);
+        }
 
         // printf("[%s] [%s]", code.c_str(), body.c_str());
 
@@ -45,14 +50,19 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Message cannot be sent to %s.\n", info.recipient.c_str());
             continue;
         }
-        if (cms_sign(info.cert_path, priv_key_path, std::move(enc_msg_bio).str(), NULL)) {
+        if (cms_sign(info.cert_path, private_key_path, std::move(enc_msg_bio).str(), NULL)) {
             fprintf(stderr, "Message cannot be sent to %s.\n", info.recipient.c_str());
             continue;
         }
         info.encrypted_signed_message = my::load_file_to_string("./tmp/smout.txt");
         // printf("msg[%s]\n", info.encrypted_signed_message.c_str());
 
-        client_send(info, code, body, priv_key_path);
+        try {
+            client_send(info, code, body, private_key_path);
+        } catch(...) {
+            fprintf(stderr, "Failed to get response from server. Please check your input and the liveness of the server.\n");
+            exit(1);
+        }
 
         if (code == "200") {
             fprintf(stdout, "Message has been sent to %s successfully.\n", info.recipient.c_str());

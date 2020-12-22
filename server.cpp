@@ -311,6 +311,7 @@ std::string handle_recvmsg(std::string& response, const std::string& username) {
     return "200";
 }
 
+
 int main() {
     std::string ca_cert_path = "./certs/intermediate_ca.cert.pem";
     std::string ca_key_path = "./private/intermediate_ca.key.pem";
@@ -380,8 +381,20 @@ int main() {
 
             // Parse body
             Info info;
-            char* end_of_headers = strstr(&request[0], "\r\n\r\n");
-            std::string body = std::string(end_of_headers + 4, &request[request.size()]);
+            int end_of_headers = request.find("\r\n\r\n");
+            if (end_of_headers == std::string::npos) {
+                http_code = "406";
+                response = "invalid request format";
+                my::send_http_response(ssl_bio.get(), http_code, response);
+                continue;
+            }
+            std::string body = request.substr(end_of_headers + 4);
+            if (!info.from_string(body) && (action == getcert || action == changepw || action == sendmsg_send_encrypted_signed_message)) {
+                http_code = "406";
+                response = "invalid request format";
+                my::send_http_response(ssl_bio.get(), http_code, response);
+                continue;
+            }
             printf("%s\n", body.c_str());
             printf("%d--\n", info.from_string(body));
             info.print_info();
@@ -417,8 +430,6 @@ int main() {
                     http_code = handle_sendmsg_get_recipient_cert(response, body);
                 } else if (action == sendmsg_send_encrypted_signed_message) {
                     action_string = "sendmsg_send_encrypted_signed_message";
-                    Info info;
-                    info.from_string(body);
                     info.username = peer_common_name;
                     http_code = handle_sendmsg_send_encrypted_signed_message(response, info);
                 } else if (action == recvmsg) {

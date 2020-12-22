@@ -5,6 +5,7 @@ import string
 import random
 
 def step(description):
+    print()
     print("========================================================================")
     print(description)
     print("========================================================================")
@@ -74,7 +75,6 @@ def functional_testing():
         assert res.stderr.startswith("Error from server:")
 
     step("Users cannot login with certificate signed by untrusted ca chain.")
-    # (core dumped) TODO
     res = run("./sendmsg.out ./malicious_cert/container/intermediate_ca/certs/malicious_client_certificate.pem ./malicious_cert/container/intermediate_ca/private/malicious_client_private_key.pem ./play.cpp overrich")
     res = run("./recvmsg.out ./malicious_cert/container/intermediate_ca/certs/malicious_client_certificate.pem ./malicious_cert/container/intermediate_ca/private/malicious_client_private_key.pem")
 
@@ -150,7 +150,8 @@ def functional_testing():
     assert res.stdout == ""
     assert res.stderr.startswith("Fail to verify the identity of the sender!\n")
 
-def fuzzy_testing():
+def fuzz_testing():
+    step("Fuzz testing.")
     for _ in range(10):
         res = run(get_random_cmd(["./getcert.out"]))
         assert res.returncode == 1
@@ -177,5 +178,5 @@ def fuzzy_testing():
         assert res.stderr.startswith("Error loading client certificate") or res.stderr.startswith("Usage")
 
 if __name__ == "__main__":
-    # functional_testing()
-    fuzzy_testing()
+    functional_testing()
+    fuzz_testing()
