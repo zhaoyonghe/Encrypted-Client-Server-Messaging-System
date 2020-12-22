@@ -24,7 +24,11 @@ int main(int argc, char* argv[]) {
     std::string enc_sign_msg = body.substr(0, div_idx);
     std::string signer_cert = body.substr(div_idx + 11);
 
-    printf("(%s) (%s)\n", enc_sign_msg.c_str(), signer_cert.c_str());
+    // printf("(%s) (%s)\n", enc_sign_msg.c_str(), signer_cert.c_str());
+    if (code != "200") {
+        fprintf(stderr, "Error from server: %s.\n", body.c_str());
+        exit(1);
+    }
 
     my::StringBIO enc_msg;
     //if (cms_verify("", "./certs/container/intermediate_ca/certs/ca-chain.cert.pem", 2, enc_sign_msg, NULL)) {
@@ -34,4 +38,7 @@ int main(int argc, char* argv[]) {
     if (cms_dec(info.cert_path, private_key_path, std::move(enc_msg).str(), true)) {
         exit(1);
     }
+
+    fprintf(stdout, "\n\n========================================================================\n");
+    fprintf(stdout, "Verified the identity of the sender and decrypted the message successfully, see above.\n");
 }

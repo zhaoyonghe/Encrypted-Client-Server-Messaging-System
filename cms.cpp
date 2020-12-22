@@ -75,7 +75,7 @@ int cms_enc(const std::string& recipient_cert, const std::string& msg_path, BIO*
 err:
 
     if (ret) {
-        fprintf(stderr, "Error Encrypting Data\n");
+        fprintf(stderr, "Error Encrypting Data.\n");
         ERR_print_errors_fp(stderr);
     }
 
@@ -141,7 +141,7 @@ int cms_dec(const std::string& cert_path, const std::string& pri_key_path, const
 err:
 
     if (ret) {
-        fprintf(stderr, "Error Decrypting Data\n");
+        fprintf(stderr, "Error Decrypting Data.\n");
         ERR_print_errors_fp(stderr);
     }
 
@@ -224,7 +224,7 @@ int cms_sign(const std::string& cert_path, const std::string& pri_key_path, cons
 err:
 
     if (ret) {
-        fprintf(stderr, "Error Signing Data\n");
+        fprintf(stderr, "Error Signing Data.\n");
         ERR_print_errors_fp(stderr);
     }
 
@@ -309,14 +309,12 @@ int cms_verify(const std::string& signer_cert, const std::string& ca_chain_path,
         goto err;
     }
 
-    fprintf(stdout, "Verified the identity of the sender successfully, the message is show below:\n");
-
     ret = 0;
 
 err:
 
     if (ret) {
-        fprintf(stderr, "Error Verifying Data\n");
+        fprintf(stderr, "Error Verifying Data.\n");
         ERR_print_errors_fp(stderr);
     }
 

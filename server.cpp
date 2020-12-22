@@ -202,7 +202,7 @@ std::string handle_getcert(std::string& response, std::string& ca_cert_path,
 
 std::string load_cert(std::string& response, const std::string& username) {
     if (!my::is_valid_safe_username(username)) {
-        response = "The user name is not valid and safe.";
+        response = "the user name is not valid and safe";
         return "406";
     }
 
@@ -210,7 +210,7 @@ std::string load_cert(std::string& response, const std::string& username) {
     std::string username_cert_path = "./certs/users/" + username + "_certificate.pem";
     if (stat(username_cert_path.c_str(), &buffer) != 0) {
         // This user does not exist.
-        response = "try to load an non-exist certificate (no such user or this user does not have a certificate)";
+        response = "try to load an nonexistent certificate (no such user or this user does not have a certificate)";
         return "400";
     }
 
@@ -231,7 +231,7 @@ std::string get_cur_timestamp() {
 
 std::string handle_sendmsg_send_encrypted_signed_message(std::string& response, Info& info) {
     if (!my::is_valid_safe_username(info.recipient) || !my::is_valid_safe_username(info.username)) {
-        response = "The user name is not valid and safe.";
+        response = "the user name is not valid and safe";
         return "406";
     }
 
@@ -240,7 +240,7 @@ std::string handle_sendmsg_send_encrypted_signed_message(std::string& response, 
     if (stat(recipient_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR)) {
         // This user does not exist (no such directory).
         // not (the recipient path exist and it is a directory).
-        response = "No such user or this user does not have a certificate.";
+        response = "no such user or this user does not have a certificate";
         return "400";
     }
     // the recipient path exist and it is a directory
@@ -259,7 +259,7 @@ std::string handle_changepw(std::string& response, std::string& ca_cert_path,
     std::string user_path = "./users/" + username;
     if (stat(user_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR)) {
         // This user does not exist (no such directory).
-        response = "No such user or this user does not have a certificate.";
+        response = "no such user or this user does not have a certificate";
         return "400";
     }
 
@@ -271,7 +271,7 @@ std::string handle_changepw(std::string& response, std::string& ca_cert_path,
         // Generate a new certificate
         return handle_getcert(response, ca_cert_path, ca_key_path, csr_string, username);
     } else {
-        response = "there are still unread message(s) in the user's mailbox\n";
+        response = "there are still unread message(s) in the user's mailbox";
         return "406";
     }
 }
@@ -281,19 +281,19 @@ std::string handle_recvmsg(std::string& response, const std::string& username) {
     struct stat buffer;
     std::string user_path = "./users/" + username;
     if (stat(user_path.c_str(), &buffer) != 0 || !(buffer.st_mode & S_IFDIR)) {
-        response = "No such user.";
+        response = "no such user";
         return "400";
     }
 
     if (check_mailbox_empty(username)) {
-        response = "No unread message.";
+        response = "no unread message";
         return "400";
     }
 
     // get the oldest message, load and delete it.
     auto oldest_unread_msg_path = get_oldest_unread_msg_path(username);
     if (oldest_unread_msg_path.empty()) {
-        response = "No unread message>.";
+        response = "no unread message>";
         return "400";
     }
 
@@ -394,7 +394,7 @@ int main() {
                         info.csr, info.username);
                 } else {
                     http_code = "401";
-                    response = "username password mismatch\n";
+                    response = "username password mismatch";
                 }
             } else if (action == changepw) {
                 action_string = "changepw";
@@ -404,7 +404,7 @@ int main() {
                         info.csr, info.username, info.new_password);
                 } else {
                     http_code = "401";
-                    response = "username password mismatch\n";
+                    response = "username password mismatch";
                 }
             } else {
                 // When the action is neither getcert nor changepw, check if the client sends a certificate

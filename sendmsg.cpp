@@ -42,17 +42,24 @@ int main(int argc, char* argv[]) {
         info.action = sendmsg_send_encrypted_signed_message;
         my::StringBIO enc_msg_bio;
         if (cms_enc(body, msg_path, enc_msg_bio.bio())) {
+            fprintf(stderr, "Message cannot be sent to %s.\n", info.recipient.c_str());
             continue;
         }
         if (cms_sign(info.cert_path, priv_key_path, std::move(enc_msg_bio).str(), NULL)) {
+            fprintf(stderr, "Message cannot be sent to %s.\n", info.recipient.c_str());
             continue;
         }
         info.encrypted_signed_message = my::load_file_to_string("./tmp/smout.txt");
-        printf("fucking[%s]\n", info.encrypted_signed_message.c_str());
+        // printf("msg[%s]\n", info.encrypted_signed_message.c_str());
 
         client_send(info, code, body, priv_key_path);
 
-        printf("[%s] [%s]", code.c_str(), body.c_str());
+        if (code == "200") {
+            fprintf(stdout, "Message has been sent to %s successfully.\n", info.recipient.c_str());
+        } else {
+            fprintf(stderr, "Error from server: %s.\n", body.c_str());
+        }
 
+        // printf("[%s] [%s]", code.c_str(), body.c_str());
     }
 }

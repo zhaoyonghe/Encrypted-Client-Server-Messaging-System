@@ -166,7 +166,6 @@ namespace my {
     }
 
     std::string load_file_to_string(const std::string& filename) {
-        // TODO: replace all to this
         std::ifstream t(filename);
         std::stringstream stream;
         stream << t.rdbuf();
