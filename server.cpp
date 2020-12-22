@@ -80,7 +80,7 @@ int update_password(std::string username, std::string new_password) {
     // Generate a new password
     char* new_salt = crypt_gensalt("$6$", 0, NULL, 0);
     char* new_hash = crypt(new_password.c_str(), new_salt);
-    printf("new hash: \n%s\n", new_hash);
+    // printf("new hash: \n%s\n", new_hash);
 
     // Update the password
     std::string hased_pw_path = "hashed_pw/" + username;
@@ -354,12 +354,12 @@ int main() {
         auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 0));
         try {
             std::string request = my::receive_http_message(ssl_bio.get());
-            printf("Got request:\n");
-            printf("%s\n", request.c_str());
+            // printf("Got request:\n");
+            // printf("%s\n", request.c_str());
 
             // Get the certificate used by client and extract common name
             int verify_mode = SSL_get_verify_mode(my::get_ssl(ssl_bio.get()));
-            printf("verify_mode: %d\n", verify_mode);
+            // printf("verify_mode: %d\n", verify_mode);
             std::string peer_common_name;
 
             X509* peer_cert = SSL_get_peer_certificate(my::get_ssl(ssl_bio.get()));
@@ -367,9 +367,9 @@ int main() {
                 get_common_name_from_cert(peer_cert, peer_common_name);
                 // free the peer cert immediately
                 X509_free(peer_cert);
-                printf("peer certificate common name: %s\n", peer_common_name.c_str());
+                // printf("peer certificate common name: %s\n", peer_common_name.c_str());
             } else {
-                printf("peer certificate common name: %s\n", "no certificate");
+                // printf("peer certificate common name: %s\n", "no certificate");
             }
 
             // Parse request here
@@ -395,8 +395,8 @@ int main() {
                 my::send_http_response(ssl_bio.get(), http_code, response);
                 continue;
             }
-            printf("%s\n", body.c_str());
-            printf("%d--\n", info.from_string(body));
+            // printf("%s\n", body.c_str());
+            // printf("%d--\n", info.from_string(body));
             info.print_info();
 
             if (action == getcert) {
@@ -424,9 +424,9 @@ int main() {
                 // peer_cert == NULL <==> peer_common_name.empty()
                 if (peer_common_name.empty()) {
                     http_code = "401";
-                    response = "No certificate sent\n";
+                    response = "no certificate sent\n";
                 } else if (action == sendmsg_get_recipient_cert) {
-                    printf("recipient:[%s]\n", body.c_str());
+                    // printf("recipient:[%s]\n", body.c_str());
                     http_code = handle_sendmsg_get_recipient_cert(response, body);
                 } else if (action == sendmsg_send_encrypted_signed_message) {
                     action_string = "sendmsg_send_encrypted_signed_message";
@@ -437,14 +437,14 @@ int main() {
                     http_code = handle_recvmsg(response, peer_common_name);
                 } else {
                     http_code = "404";
-                    response = "Unknown action\n";
+                    response = "unknown action\n";
                 }
             }
 
-            printf("Got action: %s\n", action_string.c_str());
+            // printf("Got action: %s\n", action_string.c_str());
             my::send_http_response(ssl_bio.get(), http_code, response);
         } catch (const std::exception& ex) {
-            printf("Worker exited with exception:\n%s\n", ex.what());
+            // printf("Worker exited with exception:\n%s\n", ex.what());
         }
     }
     printf("\nClean exit!\n");

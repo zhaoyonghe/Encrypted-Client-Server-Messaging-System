@@ -4,7 +4,7 @@ SERVER_SANDBOX_PRIVATE = $(SERVER_SANDBOX)/private
 SERVER_SANDBOX_HASHED_PW = $(SERVER_SANDBOX)/hashed_pw
 SERVER_SANDBOX_USERS = $(SERVER_SANDBOX)/users
 
-install: sandbox_build four
+install: sandbox_build four random_sends
 
 server:
 	rm -rf $(SERVER_SANDBOX)
@@ -40,6 +40,9 @@ recvmsg:
 
 cms:
 	g++ -o cms.out cms.cpp -lssl -lcrypto
+
+random_sends:
+	g++ -o random_sends.out random_sends.cpp my.cpp -lssl -lcrypto
 
 sandbox_build:
 	python3 users/gen.py

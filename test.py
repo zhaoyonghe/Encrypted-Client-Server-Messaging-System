@@ -151,7 +151,7 @@ def functional_testing():
     assert res.stderr.startswith("Fail to verify the identity of the sender!\n")
 
 def fuzz_testing():
-    step("Fuzz testing.")
+    step("Fuzz testing: random input into binary.")
     for _ in range(10):
         res = run(get_random_cmd(["./getcert.out"]))
         assert res.returncode == 1
@@ -176,6 +176,12 @@ def fuzz_testing():
         res = run(get_random_cmd(["./recvmsg.out"], 0, 3))
         assert res.returncode == 1
         assert res.stderr.startswith("Error loading client certificate") or res.stderr.startswith("Usage")
+
+    step("Fuzz testing: random sends into server.")
+    for _ in range(30):
+        res = run("./random_sends.out")
+        assert res.returncode == 1
+        assert res.stderr == "" or res.stderr.startswith("400") or res.stderr.startswith("401") or res.stderr.startswith("406")
 
 if __name__ == "__main__":
     functional_testing()
