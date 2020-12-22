@@ -4,12 +4,7 @@ SERVER_SANDBOX_PRIVATE = $(SERVER_SANDBOX)/private
 SERVER_SANDBOX_HASHED_PW = $(SERVER_SANDBOX)/hashed_pw
 SERVER_SANDBOX_USERS = $(SERVER_SANDBOX)/users
 
-default:
-	g++ -o client.out client.cpp -lssl -lcrypto
-	g++ -o server.out server.cpp -lssl -lcrypto
-
-install: server getcert changepw sendmsg recvmsg
-	echo "not implemented"
+install: sandbox_build four
 
 server:
 	rm -rf $(SERVER_SANDBOX)
@@ -47,6 +42,7 @@ cms:
 	g++ -o cms.out cms.cpp -lssl -lcrypto
 
 sandbox_build:
+	python3 users/gen.py
 	sudo docker build -t yz3645/sandbox:0.1 .
 
 sandbox_run:

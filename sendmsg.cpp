@@ -12,7 +12,7 @@
 int main(int argc, char* argv[]) {
 
     if (argc < 5) {
-        fprintf(stderr, "Usage: sendmsg <certpath> <privkeypath> <msgpath> <receipient>+\n");
+        fprintf(stderr, "Usage: ./sendmsg.out <certpath> <privkeypath> <msgpath> <receipient>+\n");
         exit(1);
     }
 

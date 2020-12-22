@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
     if (argc <= 1 or argc > 4) {
         // argc must be 1 to 3
-        fprintf(stderr, "Usage: changepw <username> <password>? <new_password>?\n");
+        fprintf(stderr, "Usage: ./changepw.out <username> <password>? <new_password>?\n");
         exit(1);
     }
 

@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
     if (argc <= 1 or argc > 3) {
         // argc must be 1 or 2
-        fprintf(stderr, "Usage: getcert <username> <password>?\n");
+        fprintf(stderr, "Usage: ./getcert.out <username> <password>?\n");
         exit(1);
     }
 

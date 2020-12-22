@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Usage: recvmsg <certpath> <privkeypath>\n");
+        fprintf(stderr, "Usage: ./recvmsg.out <certpath> <privkeypath>\n");
         exit(1);
     }
 
