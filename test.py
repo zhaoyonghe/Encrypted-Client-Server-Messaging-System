@@ -25,16 +25,6 @@ def get_random_cmd(li, arg_num_left=2, arg_num_right=5):
         li.append(get_radom_string())
     return " ".join(li)
 
-def fuzzy_testing():
-    for _ in range(10):
-        res = run(get_random_cmd(["./getcert.out"]))
-        assert res.returncode == 1
-        assert res.stderr.startswith("Error from server:")
-    for _ in range(10):
-        res = run("./getcert.out addleness " + get_radom_string())
-        assert res.returncode == 1
-        assert res.stderr.startswith("Error from server:")
-
 def forever():
     while True:
         for cmd in ["./getcert.out addleness Cardin_pwns", "./getcert.out overrich Freemasonry_bruskest", "./getcert.out wamara stirrer_hewer's"]:
@@ -44,7 +34,7 @@ def forever():
             assert res.stdout.strip().endswith("-----END CERTIFICATE-----")
             assert res.stderr == "" 
 
-if __name__ == "__main__":
+def functional_testing():
     step("Users cannot login with incorrect password.")
     for cmd in ["./getcert.out addleness hjglgy", "./getcert.out overrich 234523b4kb234t", "./getcert.out wamara c,,,,,cc"]:
         res = run(cmd)
@@ -159,3 +149,33 @@ if __name__ == "__main__":
     assert res.returncode == 1
     assert res.stdout == ""
     assert res.stderr.startswith("Fail to verify the identity of the sender!\n")
+
+def fuzzy_testing():
+    for _ in range(10):
+        res = run(get_random_cmd(["./getcert.out"]))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error from server:") or res.stderr.startswith("Usage")
+    for _ in range(10):
+        res = run(get_random_cmd(["./getcert.out", "addleness"], 1, 1))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error from server:")
+    for _ in range(10):
+        res = run(get_random_cmd(["./changepw.out"], 3, 7))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error from server:") or res.stderr.startswith("Usage")
+    for _ in range(10):
+        res = run(get_random_cmd(["./changepw.out", "addleness"], 2, 2))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error from server:")
+    for _ in range(10):
+        res = run(get_random_cmd(["./sendmsg.out"], 0, 5))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error loading client certificate") or res.stderr.startswith("Usage")
+    for _ in range(10):
+        res = run(get_random_cmd(["./recvmsg.out"], 0, 3))
+        assert res.returncode == 1
+        assert res.stderr.startswith("Error loading client certificate") or res.stderr.startswith("Usage")
+
+if __name__ == "__main__":
+    # functional_testing()
+    fuzzy_testing()
