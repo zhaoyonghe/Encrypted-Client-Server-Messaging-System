@@ -11,7 +11,7 @@ def step(description):
 
 def run(cmd):
     a = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    #print(a)
+    print(a)
     return a
 
 def get_radom_string(arg_len_left=1, arg_len_right=100):

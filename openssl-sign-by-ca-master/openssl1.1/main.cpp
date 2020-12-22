@@ -18,14 +18,14 @@
 #define REQ_DN_OU ""
 #define REQ_DN_CN "VNF Application"
 
-static void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size);
-static void csr_to_pem(X509_REQ *req, uint8_t **req_bytes, size_t *req_size);
-static int generate_key_csr(const std::string &username, EVP_PKEY **key, X509_REQ **req);
-static int generate_set_random_serial(X509 *crt);
-static int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_PKEY **key, X509 **crt);
-static void key_to_pem(EVP_PKEY *key, uint8_t **key_bytes, size_t *key_size);
-static int load_ca(const char *ca_key_path, EVP_PKEY **ca_key, const char *ca_crt_path, X509 **ca_crt);
-static void print_bytes(uint8_t *data, size_t size);
+static void crt_to_pem(X509* crt, uint8_t** crt_bytes, size_t* crt_size);
+static void csr_to_pem(X509_REQ* req, uint8_t** req_bytes, size_t* req_size);
+static int generate_key_csr(const std::string& username, EVP_PKEY** key, X509_REQ** req);
+static int generate_set_random_serial(X509* crt);
+static int generate_signed_key_pair(X509_REQ* req, EVP_PKEY* ca_key, X509* ca_crt, EVP_PKEY** key, X509** crt);
+static void key_to_pem(EVP_PKEY* key, uint8_t** key_bytes, size_t* key_size);
+static int load_ca(const char* ca_key_path, EVP_PKEY** ca_key, const char* ca_crt_path, X509** ca_crt);
+static void print_bytes(uint8_t* data, size_t size);
 
 // int main_example(int argc, char **argv)
 // {
@@ -79,81 +79,67 @@ static void print_bytes(uint8_t *data, size_t size);
 // 	return 0;
 // }
 
-int get_common_name_from_cert(const X509 *crt, std::string &out)
-{
-	X509_NAME *name = NULL;
-	X509_NAME_ENTRY *entry = NULL;
+int get_common_name_from_cert(const X509* crt, std::string& out) {
+	X509_NAME* name = NULL;
+	X509_NAME_ENTRY* entry = NULL;
 
-	if (crt != NULL)
-	{
+	if (crt != NULL) {
 		name = X509_get_subject_name(crt);
-		if (name != NULL)
-		{
+		if (name != NULL) {
 			int lastpos = -1;
 			lastpos = X509_NAME_get_index_by_NID(name, NID_commonName, lastpos);
-			if (lastpos != -1)
-			{
+			if (lastpos != -1) {
 				entry = X509_NAME_get_entry(name, lastpos);
-				ASN1_STRING *asn = X509_NAME_ENTRY_get_data(entry);
-				unsigned char *common_name;
+				ASN1_STRING* asn = X509_NAME_ENTRY_get_data(entry);
+				unsigned char* common_name;
 				ASN1_STRING_to_UTF8(&common_name, asn);
-				out = std::string(reinterpret_cast<char const *>(common_name));
-			}
-			else
-			{
+				out = std::string(reinterpret_cast<char const*>(common_name));
+			} else {
 				return 1;
 			}
-		}
-		else
-		{
+		} else {
 			return 1;
 		}
-	}
-	else
-	{
+	} else {
 		return 1;
 	}
 
 	return 0;
 }
 
-void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
-{
+void crt_to_pem(X509* crt, uint8_t** crt_bytes, size_t* crt_size) {
 	/* Convert signed certificate to PEM format. */
-	BIO *bio = BIO_new(BIO_s_mem());
+	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_X509(bio, crt);
 	*crt_size = BIO_pending(bio);
-	*crt_bytes = (uint8_t *)malloc(*crt_size + 1);
+	*crt_bytes = (uint8_t*)malloc(*crt_size + 1);
 	BIO_read(bio, *crt_bytes, *crt_size);
 	BIO_free_all(bio);
 }
 
-void key_to_pem(EVP_PKEY *key, uint8_t **key_bytes, size_t *key_size)
-{
+void key_to_pem(EVP_PKEY* key, uint8_t** key_bytes, size_t* key_size) {
 	/* Convert private key to PEM format. */
-	BIO *bio = BIO_new(BIO_s_mem());
+	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_PrivateKey(bio, key, NULL, NULL, 0, NULL, NULL);
 	*key_size = BIO_pending(bio);
-	*key_bytes = (uint8_t *)malloc(*key_size + 1);
+	*key_bytes = (uint8_t*)malloc(*key_size + 1);
 	BIO_read(bio, *key_bytes, *key_size);
 	BIO_free_all(bio);
 }
 
-void csr_to_pem(X509_REQ *req, uint8_t **req_bytes, size_t *req_size)
-{
+void csr_to_pem(X509_REQ* req, uint8_t** req_bytes, size_t* req_size) {
 	/* Convert certificate signing request to PEM format. */
-	BIO *bio = BIO_new(BIO_s_mem());
+	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_X509_REQ(bio, req);
 	*req_size = BIO_pending(bio);
-	*req_bytes = (uint8_t *)malloc(*req_size + 1);
+	*req_bytes = (uint8_t*)malloc(*req_size + 1);
 	BIO_read(bio, *req_bytes, *req_size);
 	BIO_free_all(bio);
 }
 
-int generate_signed_key_pair(X509_REQ *req, EVP_PKEY *ca_key, X509 *ca_crt, EVP_PKEY **key, X509 **crt)
-{
+int generate_signed_key_pair(X509_REQ* req, EVP_PKEY* ca_key, X509* ca_crt, EVP_PKEY** key, X509** crt) {
 	/* Generate the private key and corresponding CSR. */
-	EVP_PKEY *req_pubkey;
+	EVP_PKEY* req_pubkey;
 
 	/* Sign with the CA. */
 	*crt = X509_new();
@@ -235,13 +221,12 @@ err:
 	return 0;
 }
 
-int generate_key_csr(const std::string &username, EVP_PKEY **key, X509_REQ **req)
-{
+int generate_key_csr(const std::string& username, EVP_PKEY** key, X509_REQ** req) {
 	*key = NULL;
 	*req = NULL;
-	RSA *rsa = NULL;
-	BIGNUM *e = NULL;
-	X509_NAME *name;
+	RSA* rsa = NULL;
+	BIGNUM* e = NULL;
+	X509_NAME* name;
 
 	*key = EVP_PKEY_new();
 	if (!*key)
@@ -266,12 +251,12 @@ int generate_key_csr(const std::string &username, EVP_PKEY **key, X509_REQ **req
 
 	/* Set the DN of the request. */
 	name = X509_REQ_get_subject_name(*req);
-	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (const unsigned char *)REQ_DN_C, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "ST", MBSTRING_ASC, (const unsigned char *)REQ_DN_ST, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "L", MBSTRING_ASC, (const unsigned char *)REQ_DN_L, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (const unsigned char *)REQ_DN_O, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "OU", MBSTRING_ASC, (const unsigned char *)REQ_DN_OU, -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (const unsigned char *)username.c_str(), -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (const unsigned char*)REQ_DN_C, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "ST", MBSTRING_ASC, (const unsigned char*)REQ_DN_ST, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "L", MBSTRING_ASC, (const unsigned char*)REQ_DN_L, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (const unsigned char*)REQ_DN_O, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "OU", MBSTRING_ASC, (const unsigned char*)REQ_DN_OU, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (const unsigned char*)username.c_str(), -1, -1, 0);
 
 	/* Self-sign the request to prove that we posses the key. */
 	if (!X509_REQ_sign(*req, *key, EVP_sha256()))
@@ -288,16 +273,15 @@ err:
 	return 0;
 }
 
-int generate_set_random_serial(X509 *crt)
-{
+int generate_set_random_serial(X509* crt) {
 	/* Generates a 20 byte random serial number and sets in certificate. */
 	unsigned char serial_bytes[20];
 	if (RAND_bytes(serial_bytes, sizeof(serial_bytes)) != 1)
 		return 0;
 	serial_bytes[0] &= 0x7f; /* Ensure positive serial! */
-	BIGNUM *bn = BN_new();
+	BIGNUM* bn = BN_new();
 	BN_bin2bn(serial_bytes, sizeof(serial_bytes), bn);
-	ASN1_INTEGER *serial = ASN1_INTEGER_new();
+	ASN1_INTEGER* serial = ASN1_INTEGER_new();
 	BN_to_ASN1_INTEGER(bn, serial);
 
 	X509_set_serialNumber(crt, serial); // Set serial.
@@ -307,9 +291,8 @@ int generate_set_random_serial(X509 *crt)
 	return 1;
 }
 
-int load_ca(const char *ca_key_path, EVP_PKEY **ca_key, const char *ca_crt_path, X509 **ca_crt)
-{
-	BIO *bio = NULL;
+int load_ca(const char* ca_key_path, EVP_PKEY** ca_key, const char* ca_crt_path, X509** ca_crt) {
+	BIO* bio = NULL;
 	*ca_crt = NULL;
 	*ca_key = NULL;
 
@@ -338,25 +321,22 @@ err:
 	return 0;
 }
 
-void print_bytes(uint8_t *data, size_t size)
-{
-	for (size_t i = 0; i < size; i++)
-	{
+void print_bytes(uint8_t* data, size_t size) {
+	for (size_t i = 0; i < size; i++) {
 		printf("%c", data[i]);
 	}
 }
 
 // Generate and save key and csr. Return csr for get_cert usage
-int generate_key_and_csr(const std::string &username, std::string &key_out, std::string &csr_out)
-{
+int generate_key_and_csr(const std::string& username, std::string& key_out, std::string& csr_out) {
 	// Generate key and csr
-	X509_REQ *req = NULL;
-	EVP_PKEY *key = NULL;
+	X509_REQ* req = NULL;
+	EVP_PKEY* key = NULL;
 	generate_key_csr(username, &key, &req);
 
 	// Convert key and csr to pem
-	uint8_t *key_bytes = NULL;
-	uint8_t *csr_bytes = NULL;
+	uint8_t* key_bytes = NULL;
+	uint8_t* csr_bytes = NULL;
 	size_t key_size = 0;
 	size_t csr_size = 0;
 	key_to_pem(key, &key_bytes, &key_size);

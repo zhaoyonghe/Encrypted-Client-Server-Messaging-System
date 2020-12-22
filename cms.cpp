@@ -89,7 +89,7 @@ err:
 }
 
 int cms_dec(const std::string& cert_path, const std::string& pri_key_path, const std::string& enc_msg, const bool display) {
-    BIO *in = NULL, *out = NULL, * cbio = NULL, * kbio = NULL;
+    BIO* in = NULL, * out = NULL, * cbio = NULL, * kbio = NULL;
     X509* mcert = NULL;
     EVP_PKEY* mkey = NULL;
     CMS_ContentInfo* cms = NULL;
@@ -118,7 +118,7 @@ int cms_dec(const std::string& cert_path, const std::string& pri_key_path, const
     } else {
         in = BIO_new_mem_buf(enc_msg.c_str(), enc_msg.length());
     }
-    
+
     cms = SMIME_read_CMS(in, NULL);
     if (!cms)
         goto err;
@@ -128,7 +128,7 @@ int cms_dec(const std::string& cert_path, const std::string& pri_key_path, const
     } else {
         out = BIO_new_file("./tmp/decout.txt", "w");
     }
-    
+
     if (!out)
         goto err;
 

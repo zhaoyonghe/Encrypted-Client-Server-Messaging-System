@@ -6,14 +6,12 @@
 #include "client.hpp"
 #include "openssl-sign-by-ca-master/openssl1.1/main.cpp"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
     Info info;
     info.action = getcert;
     std::string private_key_path = "";
 
-    if (argc <= 1 or argc > 3)
-    {
+    if (argc <= 1 or argc > 3) {
         // argc must be 1 or 2
         fprintf(stderr, "Usage: getcert <username> <password>?");
         exit(1);
@@ -32,8 +30,7 @@ int main(int argc, char *argv[])
     client_send(info, code, body, private_key_path);
 
     // If get 200 OK, save key and received certificate
-    if (code == "200")
-    {
+    if (code == "200") {
         std::ofstream key_pem_file("./" + info.username + "_private_key.pem");
         key_pem_file << key;
         key_pem_file.close();
