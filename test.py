@@ -32,17 +32,22 @@ if __name__ == "__main__":
     for _ in range(10):
         assert run("./getcert.out addleness " + get_radom_string()).returncode == 1
     
-    step("User can getcert with correct username/password pair.")
+    step("Users cannot login with incorrect password.")
+    assert run("./getcert.out addleness aaa").returncode == 1
+    assert run("./getcert.out overrich bbb").returncode == 1
+    assert run("./getcert.out wamara ccc").returncode == 1
+    
+    step("Users can getcert with correct username/password pair.")
     assert run("./getcert.out addleness Cardin_pwns").returncode == 0
     assert run("./getcert.out overrich Freemasonry_bruskest").returncode == 0
     assert run("./getcert.out wamara stirrer_hewer's").returncode == 0
     
-    step("User can changepw with correct username/passsword pair.")
+    step("Users can changepw with correct username/passsword pair.")
     assert run("./changepw.out addleness Cardin_pwns aaa").returncode == 0
     assert run("./changepw.out overrich Freemasonry_bruskest ooo").returncode == 0
     assert run("./changepw.out wamara stirrer_hewer's www").returncode == 0
 
-    step("User can login with new password.")
+    step("Users can login with new password.")
     assert run("./getcert.out addleness aaa").returncode == 0
     assert run("./getcert.out overrich ooo").returncode == 0
     assert run("./getcert.out wamara www").returncode == 0
@@ -51,3 +56,28 @@ if __name__ == "__main__":
     assert run("./getcert.out addleness Cardin_pwns").returncode == 1
     assert run("./getcert.out overrich Freemasonry_bruskest").returncode == 1
     assert run("./getcert.out wamara stirrer_hewer's").returncode == 1
+
+    step("Users can send messages with certificate to other users with certificate.")
+    assert run("./sendmsg.out ./addleness_certificate.pem ./addleness_private_key.pem ./play.cpp overrich").returncode == 0
+    assert run("./sendmsg.out ./overrich_certificate.pem ./overrich_private_key.pem ./play.cpp wamara").returncode == 0
+    assert run("./sendmsg.out ./wamara_certificate.pem ./wamara_private_key.pem ./play.cpp addleness").returncode == 0
+
+    step("Users cannot send messages with incorrect key pair.")
+    assert run("./sendmsg.out ./addleness_certificate.pem ./wamara_private_key.pem ./play.cpp overrich").returncode == 1
+    assert run("./sendmsg.out ./overrich_certificate.pem ./addleness_private_key.pem ./play.cpp wamara").returncode == 1
+    assert run("./sendmsg.out ./wamara_certificate.pem ./overrich_private_key.pem ./play.cpp addleness").returncode == 1
+
+    step("Users cannot send messages to users without certificate.")
+    assert run("./sendmsg.out ./addleness_certificate.pem ./addleness_private_key.pem ./play.cpp analects").returncode == 1
+    assert run("./sendmsg.out ./overrich_certificate.pem ./overrich_private_key.pem ./play.cpp analects").returncode == 1
+    assert run("./sendmsg.out ./wamara_certificate.pem ./wamara_private_key.pem ./play.cpp analects").returncode == 1
+
+    step("Users cannot send messages to nonexistent users.")
+    assert run("./sendmsg.out ./addleness_certificate.pem ./addleness_private_key.pem ./play.cpp a").returncode == 1
+    assert run("./sendmsg.out ./overrich_certificate.pem ./overrich_private_key.pem ./play.cpp a").returncode == 1
+    assert run("./sendmsg.out ./wamara_certificate.pem ./wamara_private_key.pem ./play.cpp a").returncode == 1
+
+    step("Users cannot changepw with messages in mailbox.")
+    assert run("./changepw.out addleness aaa bbb").returncode == 1
+    assert run("./changepw.out overrich ooo ccc").returncode == 1
+    assert run("./changepw.out wamara www ddd").returncode == 1
