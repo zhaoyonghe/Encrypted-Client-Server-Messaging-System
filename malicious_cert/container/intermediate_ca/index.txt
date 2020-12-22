@@ -1,0 +1,2 @@
+V	220101041951Z		1000	unknown	/C=CN/ST=Tianjin/L=Nankai District/O=Nankai Software/OU=IT/CN=msg_server/emailAddress=abc@def.ghi
+V	220101041955Z		1001	unknown	/C=CN/ST=Tianjin/L=Nankai District/O=Nankai Software/OU=IT/CN=student/emailAddress=iamastudent@abc.edu

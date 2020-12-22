@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
     if (argc <= 1 or argc > 4) {
         // argc must be 1 to 3
-        fprintf(stderr, "Usage: changepw <username> <password>? <new_password>?");
+        fprintf(stderr, "Usage: changepw <username> <password>? <new_password>?\n");
         exit(1);
     }
 
@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     std::string key, csr;
     generate_key_and_csr(info.username, key, csr);
     info.csr = csr;
-    info.print_info();
+    // info.print_info();
 
     std::string code, body;
     client_send(info, code, body, private_key_path);
@@ -39,6 +39,11 @@ int main(int argc, char* argv[]) {
         std::ofstream certificate_pem_file("./" + info.username + "_certificate.pem");
         certificate_pem_file << body;
         certificate_pem_file.close();
+
+        fprintf(stdout, "Password is changed!\nGot a new certificate:\n\n%s\n", body.c_str());
+    } else {
+        fprintf(stderr, "Error from server: %s.\n", body.c_str());
+        exit(1);
     }
 
     return 0;

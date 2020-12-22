@@ -155,9 +155,7 @@ std::string handle_getcert(std::string& response, std::string& ca_cert_path,
     EVP_PKEY* ca_key = NULL;
     X509* ca_crt = NULL;
     if (!load_ca(ca_key_path.c_str(), &ca_key, ca_cert_path.c_str(), &ca_crt)) {
-        std::string err_msg = "Failed to load CA certificate and/or key!\n";
-        std::cout << err_msg;
-        response = err_msg;
+        response = "failed to load CA certificate and/or key";
         return "400";
     }
 
@@ -171,9 +169,7 @@ std::string handle_getcert(std::string& response, std::string& ca_cert_path,
     X509* crt = NULL;
     int ret = generate_signed_key_pair(csr, ca_key, ca_crt, &key, &crt);
     if (!ret) {
-        std::string err_msg = "Failed to generate key pair!\n";
-        std::cout << err_msg;
-        response = err_msg;
+        response = "failed to generate key pair";
         return "406";
     }
 
@@ -275,7 +271,7 @@ std::string handle_changepw(std::string& response, std::string& ca_cert_path,
         // Generate a new certificate
         return handle_getcert(response, ca_cert_path, ca_key_path, csr_string, username);
     } else {
-        response = "There are still unread message(s) in the user's mailbox. Please download the message(s) first\n";
+        response = "there are still unread message(s) in the user's mailbox\n";
         return "406";
     }
 }

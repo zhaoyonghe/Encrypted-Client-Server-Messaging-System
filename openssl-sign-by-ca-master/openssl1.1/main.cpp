@@ -113,7 +113,9 @@ void crt_to_pem(X509* crt, uint8_t** crt_bytes, size_t* crt_size) {
 	PEM_write_bio_X509(bio, crt);
 	*crt_size = BIO_pending(bio);
 	*crt_bytes = (uint8_t*)malloc(*crt_size + 1);
+	
 	BIO_read(bio, *crt_bytes, *crt_size);
+	(*crt_bytes)[*crt_size] = 0;
 	BIO_free_all(bio);
 }
 
@@ -166,48 +168,6 @@ int generate_signed_key_pair(X509_REQ* req, EVP_PKEY* ca_key, X509* ca_crt, EVP_
 	X509_set_pubkey(*crt, req_pubkey);
 	EVP_PKEY_free(req_pubkey);
 
-	// Set extensions of the certificate
-	// X509_EXTENSION *ex;
-	// X509V3_CTX ctx;
-	// X509V3_set_ctx_nodb(&ctx);
-	// X509V3_set_ctx(&ctx, ca_crt, *crt, req, NULL, 0);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_basic_constraints, (char *)"CA:FALSE")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_netscape_cert_type, (char *)"client, email")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_netscape_comment, (char *)"OpenSSL Generated Client Certificate")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_basic_constraints, (char *)"CA:FALSE")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_key_identifier, (char *)"hash")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_authority_key_identifier, (char *)"keyid,issuer")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_key_usage, (char *)"critical, nonRepudiation, digitalSignature, keyEncipherment")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_ext_key_usage, (char *)"clientAuth, emailProtection")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
-	// if (!(ex = X509V3_EXT_conf_nid(NULL, &ctx, NID_subject_alt_name, (char *)"IP:2.2.2.2")))
-	// 	goto err;
-	// X509_add_ext(*crt, ex, -1);
-
 	/* Now perform the actual signing with the CA. */
 	if (X509_sign(*crt, ca_key, EVP_sha256()) == 0)
 		goto err;
@@ -215,7 +175,7 @@ int generate_signed_key_pair(X509_REQ* req, EVP_PKEY* ca_key, X509* ca_crt, EVP_
 	X509_REQ_free(req);
 	return 1;
 err:
-	//EVP_PKEY_free(*key);
+	// EVP_PKEY_free(*key);
 	X509_REQ_free(req);
 	X509_free(*crt);
 	return 0;

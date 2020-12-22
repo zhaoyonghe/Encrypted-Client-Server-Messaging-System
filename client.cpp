@@ -20,6 +20,8 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
     std::string address = "www.msg_server.com";
     char msg_header[50];
     sprintf(msg_header, "POST /%d HTTP/1.1", info.action);
+    std::string host_port = "localhost:4399";
+
 
     /* Set up the SSL context */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -31,7 +33,6 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
 #endif
 
     // load self certificate, private key and CA certificate (to verify the identity of the connection peer)
-    // TODO: add peer verification for sendmsg
     if (info.action != getcert && info.action != changepw) {
         if (!SSL_CTX_use_certificate_file(ssl_ctx.get(), info.cert_path.c_str(), SSL_FILETYPE_PEM)) {
             my::print_errors_and_exit("Error loading client certificate");
@@ -51,6 +52,7 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
     if (BIO_do_connect(conn_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_connect");
     }
+
     auto ssl_bio = std::move(conn_bio) | my::UniquePtr<BIO>(BIO_new_ssl(ssl_ctx.get(), 1));
     // Add the destination domain in plaintext as part of the TLS handshake.
     // It goes in a field called “Server Name Indication” (SNI).
@@ -58,41 +60,39 @@ int client_send(Info& info, std::string& code, std::string& body, std::string& p
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     SSL_set1_host(my::get_ssl(ssl_bio.get()), address.c_str());
 #endif
+
     if (BIO_do_handshake(ssl_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), address.c_str());
 
     if (info.action == getcert || info.action == changepw) {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+        my::send_http_post(ssl_bio.get(), msg_header, host_port, info.to_string());
     } else if (info.action == sendmsg_get_recipient_cert) {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.recipient);
+        my::send_http_post(ssl_bio.get(), msg_header, host_port, info.recipient);
     } else if (info.action == sendmsg_send_encrypted_signed_message) {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", info.to_string());
+        my::send_http_post(ssl_bio.get(), msg_header, host_port, info.to_string());
     } else if (info.action == recvmsg) {
-        my::send_http_post(ssl_bio.get(), msg_header, "localhost:4399", "");
+        my::send_http_post(ssl_bio.get(), msg_header, host_port, "");
     } else {
         return 1;
     }
 
     std::string response = my::receive_http_message(ssl_bio.get());
-    printf("%s", response.c_str());
+    // printf("%s", response.c_str());
 
     // TODO: handle wrong format
     // Parse the reponse to get http code and body
     // Find the https code first
-    std::string delimiter = " ";
-    response.erase(0, response.find(delimiter) + delimiter.length());
-    std::string token = response.substr(0, response.find(delimiter));
-    response.erase(0, response.find(delimiter) + delimiter.length());
-    code = token;
+    try {
+        code = response.substr(9, 3);
+        int div_idx = response.find("\r\n\r\n");
+        body = response.substr(div_idx + 4);
+    } catch (std::exception& ex) {
+        
+    }
 
-    // Get rid of header and get the body
-    delimiter = "\n";
-    response.erase(0, response.find(delimiter) + delimiter.length());
-    response.erase(0, response.find(delimiter) + delimiter.length());
-    response.erase(0, response.find(delimiter) + delimiter.length());
-    body = response;
+
 
     if (code != "200") {
         return 1;
