@@ -175,7 +175,7 @@ namespace my {
     }
 
     void delete_file(const std::string& filename) {
-        
+        remove(filename.c_str());
     }
 
 } // namespace my

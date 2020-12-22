@@ -251,18 +251,18 @@ int cms_verify(const std::string& signer_cert, const std::string& ca_chain_path,
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 
-    // /* Read in signer certificate */
-    // sbio = BIO_new_mem_buf(signer_cert.c_str(), signer_cert.length());
-    // if (!sbio)
-    //     goto err;
-    // scert = PEM_read_bio_X509(sbio, NULL, 0, NULL);
-    // if (!scert)
-    //     goto err;
+    /* Read in signer certificate */
+    sbio = BIO_new_mem_buf(signer_cert.c_str(), signer_cert.length());
+    if (!sbio)
+        goto err;
+    scert = PEM_read_bio_X509(sbio, NULL, 0, NULL);
+    if (!scert)
+        goto err;
 
-    // /* Create signer STACK and add signer cert to it */
-    // signers = sk_X509_new_null();
-    // if (!signers || !sk_X509_push(signers, scert))
-    //     goto err;
+    /* Create signer STACK and add signer cert to it */
+    signers = sk_X509_new_null();
+    if (!signers || !sk_X509_push(signers, scert))
+        goto err;
 
     /* Set up trusted CA certificate store */
     st = X509_STORE_new();
@@ -304,12 +304,12 @@ int cms_verify(const std::string& signer_cert, const std::string& ca_chain_path,
         enc_msg = out;
     }
 
-    if (!CMS_verify(cms, NULL, st, cont, enc_msg, 0)) {
-        fprintf(stderr, "Verification Failure\n");
+    if (!CMS_verify(cms, signers, st, cont, enc_msg, CMS_NOINTERN)) {
+        fprintf(stderr, "Fail to verify the identity of the sender!\n");
         goto err;
     }
 
-    fprintf(stderr, "Verification Successful\n");
+    fprintf(stdout, "Verified the identity of the sender successfully, the message is show below:\n");
 
     ret = 0;
 
