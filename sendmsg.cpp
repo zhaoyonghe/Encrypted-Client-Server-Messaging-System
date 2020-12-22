@@ -29,10 +29,10 @@ int main(int argc, char* argv[]) {
         std::string code, body;
         client_send(info, code, body, priv_key_path);
 
-        printf("[%s] [%s]", code.c_str(), body.c_str());
+        // printf("[%s] [%s]", code.c_str(), body.c_str());
 
         if (code != "200") {
-            printf("Message cannot be sent to %s: %s\n", info.recipient.c_str(), body.c_str());
+            fprintf(stderr, "Message cannot be sent to %s: %s.\n", info.recipient.c_str(), body.c_str());
             continue;
         }
 

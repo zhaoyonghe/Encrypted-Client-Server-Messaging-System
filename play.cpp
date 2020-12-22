@@ -13,11 +13,11 @@ public:
     int num;
 
     A(int n) {
-        cout << "fuck\n";
+        cout << "asdffffffff\n";
         num = n;
     }
     ~A() {
-        cout << "shit\n";
+        cout << "fdsgsdgfds\n";
     }
 };
 

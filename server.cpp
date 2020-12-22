@@ -210,7 +210,7 @@ std::string load_cert(std::string& response, const std::string& username) {
     std::string username_cert_path = "./certs/users/" + username + "_certificate.pem";
     if (stat(username_cert_path.c_str(), &buffer) != 0) {
         // This user does not exist.
-        response = "Try to load an non-exist certificate: no such user or this user does not have a certificate.";
+        response = "try to load an non-exist certificate (no such user or this user does not have a certificate)";
         return "400";
     }
 
@@ -275,9 +275,6 @@ std::string handle_changepw(std::string& response, std::string& ca_cert_path,
         return "406";
     }
 }
-
-
-
 
 std::string handle_recvmsg(std::string& response, const std::string& username) {
     // Check if the mailbox folder exists

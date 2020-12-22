@@ -126,6 +126,8 @@ void key_to_pem(EVP_PKEY* key, uint8_t** key_bytes, size_t* key_size) {
 	*key_size = BIO_pending(bio);
 	*key_bytes = (uint8_t*)malloc(*key_size + 1);
 	BIO_read(bio, *key_bytes, *key_size);
+
+	(*key_bytes)[*key_size] = 0;
 	BIO_free_all(bio);
 }
 
@@ -136,6 +138,8 @@ void csr_to_pem(X509_REQ* req, uint8_t** req_bytes, size_t* req_size) {
 	*req_size = BIO_pending(bio);
 	*req_bytes = (uint8_t*)malloc(*req_size + 1);
 	BIO_read(bio, *req_bytes, *req_size);
+
+	(*req_bytes)[*req_size] = 0;
 	BIO_free_all(bio);
 }
 

@@ -86,15 +86,21 @@ if __name__ == "__main__":
     # assert run("./sendmsg.out ./overrich_certificate.pem ./overrich_private_key.pem ./play.cpp wamara").returncode == 0
     # assert run("./sendmsg.out ./wamara_certificate.pem ./wamara_private_key.pem ./play.cpp addleness").returncode == 0
 
-    # step("Users cannot send messages with incorrect key pair.")
-    # assert run("./sendmsg.out ./addleness_certificate.pem ./wamara_private_key.pem ./play.cpp overrich").returncode == 1
-    # assert run("./sendmsg.out ./overrich_certificate.pem ./addleness_private_key.pem ./play.cpp wamara").returncode == 1
-    # assert run("./sendmsg.out ./wamara_certificate.pem ./overrich_private_key.pem ./play.cpp addleness").returncode == 1
+    step("Users cannot send messages with incorrect key pair.")
+    names = ["addleness", "overrich", "wamara"]
+    s = len(names)
+    for i in range(s):
+        cmd = "./sendmsg.out ./%s_certificate.pem ./%s_private_key.pem ./play.cpp %s" % (names[i], names[(i+1)%s], names[(i+2)%s])
+        res = run(cmd)
+        res.returncode == 1
+        res.stderr.startswith("Error loading client private key")
 
-    # step("Users cannot send messages to users without certificate.")
-    # assert run("./sendmsg.out ./addleness_certificate.pem ./addleness_private_key.pem ./play.cpp analects").returncode == 1
-    # assert run("./sendmsg.out ./overrich_certificate.pem ./overrich_private_key.pem ./play.cpp analects").returncode == 1
-    # assert run("./sendmsg.out ./wamara_certificate.pem ./wamara_private_key.pem ./play.cpp analects").returncode == 1
+    step("Users cannot send messages to users without certificate.")
+    for name in ["addleness", "overrich", "wamara"]:
+        cmd = "./sendmsg.out ./%s_certificate.pem ./%s_private_key.pem ./play.cpp analects" % (name, name)
+        res = run(cmd)
+        assert res.returncode == 0
+        assert res.stderr == "Message cannot be sent to analects: try to load an non-exist certificate (no such user or this user does not have a certificate).\n"
 
     # step("Users cannot send messages to nonexistent users.")
     # assert run("./sendmsg.out ./addleness_certificate.pem ./addleness_private_key.pem ./play.cpp a").returncode == 1
